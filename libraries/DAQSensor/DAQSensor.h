@@ -13,7 +13,13 @@
 extern char sensorTypeNames[];
 
 class Sensor{
-	public:		
+	public:	
+
+		//uint8_t value;
+		double value;
+
+
+	
 		Sensor(uint8_t pin, uint8_t idx){
 			id = idx;
 			arduinoPin = pin;
@@ -57,7 +63,7 @@ class Sensor{
 				return 1;
 			}
 			
-			Serial.print("DATA ");
+			//Serial.print("DATA ");
 			Serial.print(id);
 			Serial.print(',');
 			Serial.print(type);
@@ -73,7 +79,7 @@ class Sensor{
 		uint8_t id;
 		uint8_t type;
 		
-		uint8_t value;
+		
 		
 		uint8_t yield;
 		
@@ -97,7 +103,9 @@ class AnalogSensor:public Sensor{
 				return 1;
 			}
 			
-			value = analogRead(arduinoPin);	//arduinoPin may be incorrect but there's no good way to detect
+			double reading = analogRead(arduinoPin);	//arduinoPin may be incorrect but there's no good way to detect
+			//value = map(reading, 0.0, 1023.0, 10.0, 25.0);
+			value = (reading/1024.0)*(25.0-10.0)+10.0;
 			yield = 1;
 			
 			return 0;
