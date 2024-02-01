@@ -35,5 +35,3 @@ while(1):
 		file.write(outStr)
 		file.close()
 	sys.stdout.write(outStr)
-	
-	time.sleep(.01)
