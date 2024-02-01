@@ -3,12 +3,14 @@
 
 class Timer{
 	public:
-	Timer(uint32_t);
+		Timer(uint32_t);
+		
+		uint8_t check();
+		void reset();
 	
-	uint8_t check();
-	void reset();
-	
-	
+	private:
+		uint32_t interval;
+		uint32_t lastTime;
 };
 
 #endif

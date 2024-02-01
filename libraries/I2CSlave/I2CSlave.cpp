@@ -9,7 +9,7 @@ uint8_t I2CSlave::init(){
 
 uint8_t I2CSlave::add(Sensor* x){
 	uint8_t currentSensorCount = getSensorCount();
-	sensors[currentSensorCount] = x;
+	sensors[x->getID()] = x;
 	x->init();
 	//Serial.println("Added and initialized sensor");
 	//Serial.println(currentSensorCount);
@@ -25,7 +25,7 @@ uint8_t I2CSlave::getSensorCount(){
 	return 0;
 }
 
-Sensor * I2CSlave::getSensor(uint8_t s){
+Sensor * I2CSlave::getSensor(uint8_t s){	//Index is taken to be the ID because sensors are added to the list by it.
 	return sensors[s];
 }
 

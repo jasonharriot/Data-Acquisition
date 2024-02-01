@@ -12,10 +12,10 @@ I2CSlave slave;
 
 //Sensor testSensor(13, 99);
 
-AnalogSensor sensor1(A0, 1);
-DigitalSensor sensor2(12, 2, true);
-DigitalSensor sensor3(10, 3, true);
-DigitalSensor sensor4(10, 4, true);
+AnalogSensor sensor1(A0, 0);	//TODO: Assign IDs
+AnalogSensor sensor2(A1, 1);
+AnalogSensor sensor3(A2, 2);
+AnalogSensor sensor4(A3, 3);
 
 void onRequest(){
 	slave.onRequest();
@@ -42,19 +42,5 @@ void setup() {
 
 void loop() {
 	slave.update();
-	/*Sensor * sensor = slave.getSensor(0);
-
-	Serial.print("Sensor with index 0 stuff: ");
-			
-	Serial.println(sensor->getID());
-	Serial.println(sensor->getType());
-	
-	uint16_t value = sensor->getValue();
-	uint8_t valueHigh = value>>8;
-	uint8_t valueLow = value & 255;
-
-	Serial.println(value);
-	Serial.println(valueHigh);
-	Serial.println(valueLow);*/
 	delay(100);
 }

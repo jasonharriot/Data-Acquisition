@@ -3,9 +3,15 @@
 
 #include <Wire.h>
 #include "DAQActuator.h"
+#include "Timer.h"
 
 #define PUMPRELAYPIN 2
 #define PUMPPWMPIN 9
+#define POTPIN A0
+
+Timer queryTimer(100);
+
+uint16_t potVal;
 
 void querySensor(uint8_t nodeID, uint8_t sensorID){
 	Wire.beginTransmission(nodeID);
@@ -43,14 +49,23 @@ void setup() {
 	//Temporary controls for pump
 	pinMode(PUMPRELAYPIN, OUTPUT);
 	pinMode(PUMPPWMPIN, OUTPUT);
-	//analogWrite(PUMPPWMPIN, 127);
-	digitalWrite(PUMPPWMPIN, 0);
-	digitalWrite(PUMPRELAYPIN, 1);
-
-
+	pinMode(POTPIN, INPUT);
+	analogWrite(PUMPPWMPIN, 0);
+	digitalWrite(PUMPRELAYPIN, 1);	//Turn on/off the pump
 }
 
 void loop() {
-	querySensor(1, 0);
-	delay(1000);
+	if(queryTimer.check()){
+		querySensor(1, 0);
+		querySensor(1, 1);
+		querySensor(1, 2);
+		querySensor(1, 3);
+
+		Serial.print("DATA\t0\t0\t0\t");	//Special data line for the control
+		Serial.print(potVal);
+		Serial.println();
+	}
+
+	potVal = analogRead(POTPIN);
+	analogWrite(PUMPPWMPIN, potVal/4);
 }
