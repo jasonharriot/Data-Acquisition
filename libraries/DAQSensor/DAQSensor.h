@@ -26,6 +26,7 @@ class Sensor{
 		uint8_t getID();
 		virtual uint8_t read();
 		uint32_t lastReadTime;
+		void setValue(uint16_t);
 
 	protected:
 		uint16_t value;

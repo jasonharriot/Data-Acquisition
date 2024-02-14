@@ -9,7 +9,7 @@
 #define PUMPPWMPIN 9
 #define POTPIN A0
 
-Timer queryTimer(100);
+Timer queryTimer(1000);
 
 uint16_t potVal;
 
@@ -56,10 +56,25 @@ void setup() {
 
 void loop() {
 	if(queryTimer.check()){
-		querySensor(1, 0);
+		/*querySensor(1, 0);
 		querySensor(1, 1);
 		querySensor(1, 2);
 		querySensor(1, 3);
+
+		
+		querySensor(1, 6);
+		querySensor(1, 7);
+		querySensor(1, 8);
+		querySensor(1, 9);
+		querySensor(1, 10);
+		querySensor(1, 11);
+
+		querySensor(1, 12);
+		querySensor(1, 13);*/
+
+		for(uint8_t i=0; i<=14; i++){
+			querySensor(1, i);
+		}
 
 		Serial.print("DATA\t0\t0\t0\t");	//Special data line for the control
 		Serial.print(potVal);

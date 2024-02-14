@@ -8,11 +8,11 @@ uint8_t I2CSlave::init(){
 }
 
 uint8_t I2CSlave::add(Sensor* x){
-	uint8_t currentSensorCount = getSensorCount();
-	sensors[x->getID()] = x;
+	sensors[getSensorCount()] = x;
 	x->init();
-	//Serial.println("Added and initialized sensor");
-	//Serial.println(currentSensorCount);
+	Serial.println("Added and initialized sensor.");
+	Serial.print(getSensorCount());
+	Serial.println(" sensors.");
 	return 1;
 }
 
@@ -26,7 +26,17 @@ uint8_t I2CSlave::getSensorCount(){
 }
 
 Sensor * I2CSlave::getSensor(uint8_t s){	//Index is taken to be the ID because sensors are added to the list by it.
-	return sensors[s];
+	for(uint8_t i=0; i<getSensorCount(); i++){
+		//Serial.print("Finding sensor ");
+		//Serial.print(s);
+		//Serial.print(": ");
+		if(sensors[i]->getID()==s){
+			return sensors[i];
+		}
+	}
+	
+	//return sensors[s];
+	return (Sensor*) 0;
 }
 
 void I2CSlave::onRequest(){
@@ -43,6 +53,7 @@ void I2CSlave::onRequest(){
 			//Report sensor data. Sensor index is first parameter
 			sensorIndex = v_data[0];
 			sensor = getSensor(sensorIndex);
+			if(!sensor) break;
 			
 			Wire.write(sensor->getID());
 			Wire.write(sensor->getType());
@@ -71,8 +82,15 @@ void I2CSlave::onReceive(int nBytes){
 }
 
 void I2CSlave::update(){
+	//Serial.print("Updating ");
+	//Serial.print(getSensorCount());
+	//Serial.println(" sensors...");
 	for(uint8_t i=0; i<getSensorCount(); i++){
-		getSensor(i)->read();
+		Sensor* sens = sensors[i];
+		if(!sens) continue;
+		//Serial.print("Reading sensor ");
+		//Serial.println(sens->getID());
+		sens->read();
 	}
 	
 	if(v_dataFlag){

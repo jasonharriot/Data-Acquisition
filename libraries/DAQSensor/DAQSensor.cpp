@@ -19,6 +19,10 @@ uint8_t Sensor::read(){
 	Serial.println("Base class read!");
 }
 
+void Sensor::setValue(uint16_t newVal){
+	value = newVal;
+}
+
 void Sensor::summary(){
 	Serial.println("======== Sensor Summary ========");
 	Serial.print(name);
@@ -82,7 +86,10 @@ uint8_t Sensor::getID(){
 
 AnalogSensor::AnalogSensor(uint8_t pin, uint8_t id) : Sensor(pin, id){
 	type = SENSOR_ANALOG;
+	arduinoPin = pin;
 	pinMode(arduinoPin, INPUT);
+	//Serial.print("Initialized pin")
+	//Serial.println(
 }
 
 uint8_t AnalogSensor::read(){
@@ -114,8 +121,9 @@ uint8_t AnalogSensor::read(){
 
 DigitalSensor::DigitalSensor(uint8_t pin, uint8_t id, uint8_t pullup) : Sensor(pin, id){
 	type = SENSOR_DIGITAL;
+	arduinoPin = pin;
 	pinMode(arduinoPin, INPUT);
-	digitalWrite(arduinoPin, pullup);
+	if(pullup) digitalWrite(arduinoPin, 1);
 }
 
 uint8_t DigitalSensor::read(){

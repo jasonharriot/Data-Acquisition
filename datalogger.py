@@ -20,7 +20,10 @@ os.makedirs('data', exist_ok=True)
 
 while(1):
 	lines = []
-	while(ser.in_waiting):
+	if not ser.in_waiting:
+		continue
+		
+	while ser.in_waiting:
 		lines.append(ser.readline(50).decode('utf-8').strip())
 		
 	outStr = ''
@@ -31,7 +34,9 @@ while(1):
 		dataline = f'{timestamp} {line}\n'
 		outStr += dataline
 		
-	with open(f'data/{datafilename}', 'a+') as file:
+	with open(f'data/{datafilename}', 'a+') as file:	#This may cause a high write frequency. Don't use on a computer with a mechanical HDD!
 		file.write(outStr)
 		file.close()
+		
+	print('='*32)
 	sys.stdout.write(outStr)
