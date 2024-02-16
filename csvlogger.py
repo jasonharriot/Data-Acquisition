@@ -27,7 +27,15 @@ while 1:
 		try:	#If the serial port is available
 			if ser is None or not ser.isOpen():
 				#print(f'Opening serial port {sys.argv[1]}')
-				ser = serial.Serial(comport, 115200)
+				try:
+					ser = serial.Serial(comport, 115200)
+				
+				except serial.serialutil.SerialException as sererr:
+					print("Couldn't open serial port.")
+					
+					if ser is None:
+						print("Serial port couldn't be opened on first run. Exiting.")
+						exit(1)
 				
 			if not ser.in_waiting:
 				time.sleep(.1)
@@ -43,7 +51,7 @@ while 1:
 			
 	outStr = ''
 	timestamp = datetime.datetime.now().isoformat()[:22].replace(':', '-').replace('.', '_')
-	datafilename = f'{timestamp[:13]}.txt'
+	datafilename = f'{timestamp[:13]}.csv'
 	
 	dataline = f'{timestamp},{line}\n'
 	outStr += dataline

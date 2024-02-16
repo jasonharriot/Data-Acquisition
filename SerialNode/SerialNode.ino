@@ -5,10 +5,10 @@
 #include "DAQActuator.h"
 #include "Timer.h"
 
-#define NUMSENSORS 15
+#define NUMSENSORS 16
 #define NUMFIELDS 4
 
-Timer queryTimer(1000);
+Timer queryTimer(100);
 
 uint16_t potVal;
 
@@ -35,7 +35,6 @@ void querySensor(uint8_t nodeID, uint8_t sensorID){
 	Serial.print(type);
 	Serial.print('\t');
 	Serial.println(value);*/
-
 	Serial.print(nodeID);
 	Serial.print(',');
 	Serial.print(id);
@@ -47,6 +46,7 @@ void querySensor(uint8_t nodeID, uint8_t sensorID){
 }
 
 void printHeader(uint8_t numSensors, uint8_t numFields){
+	Serial.print("HEADER,");
 	for(uint8_t i=0; i<numSensors; i++){
 		for(uint8_t j=0; j<numFields; j++){
 			/*Serial.print("Sensor ID ");
@@ -54,7 +54,6 @@ void printHeader(uint8_t numSensors, uint8_t numFields){
 			Serial.print(" field ");
 			Serial.print(j);
 			Serial.print(",");*/
-			Serial.print("");
 			Serial.print(i);
 			Serial.print(":");
 			Serial.print(j);
@@ -76,9 +75,10 @@ void setup() {
 
 void loop() {
 	if(queryTimer.check()){
-		for(uint8_t i=0; i<=15; i++){
+		Serial.print("DATA,");
+		for(uint8_t i=0; i<NUMSENSORS; i++){
 			querySensor(1, i);
-			delay(20);
+			delay(5);
 		}
 
 		Serial.println();
