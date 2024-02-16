@@ -5,9 +5,8 @@
 #include "DAQActuator.h"
 #include "Timer.h"
 
-#define PUMPRELAYPIN 2
-#define PUMPPWMPIN 9
-#define POTPIN A0
+#define NUMSENSORS 15
+#define NUMFIELDS 4
 
 Timer queryTimer(1000);
 
@@ -20,7 +19,7 @@ void querySensor(uint8_t nodeID, uint8_t sensorID){
 	Wire.endTransmission();
 
 	//Get ID, type, and value from one sensor. Last byte is if more sensors available
-	Wire.requestFrom(nodeID, 4);
+	Wire.requestFrom(nodeID, NUMFIELDS);
 	uint8_t id = Wire.read();
 	uint8_t type = Wire.read();
 	uint8_t valueHigh = Wire.read();
@@ -28,14 +27,41 @@ void querySensor(uint8_t nodeID, uint8_t sensorID){
 
 	uint16_t value = ((uint16_t)valueHigh<<8) + valueLow;
 
-	Serial.print("DATA\t");
+	/*Serial.print("DATA\t");
 	Serial.print(nodeID);
 	Serial.print('\t');
 	Serial.print(id);
 	Serial.print('\t');
 	Serial.print(type);
 	Serial.print('\t');
-	Serial.println(value);
+	Serial.println(value);*/
+
+	Serial.print(nodeID);
+	Serial.print(',');
+	Serial.print(id);
+	Serial.print(',');
+	Serial.print(type);
+	Serial.print(',');
+	Serial.print(value);
+	Serial.print(',');
+}
+
+void printHeader(uint8_t numSensors, uint8_t numFields){
+	for(uint8_t i=0; i<numSensors; i++){
+		for(uint8_t j=0; j<numFields; j++){
+			/*Serial.print("Sensor ID ");
+			Serial.print(i);
+			Serial.print(" field ");
+			Serial.print(j);
+			Serial.print(",");*/
+			Serial.print("");
+			Serial.print(i);
+			Serial.print(":");
+			Serial.print(j);
+			Serial.print(",");
+		}
+	}
+	Serial.println();
 }
 
 void setup() {
@@ -45,42 +71,16 @@ void setup() {
 
 	Wire.begin();
 
-
-	//Temporary controls for pump
-	pinMode(PUMPRELAYPIN, OUTPUT);
-	pinMode(PUMPPWMPIN, OUTPUT);
-	pinMode(POTPIN, INPUT);
-	analogWrite(PUMPPWMPIN, 0);
-	digitalWrite(PUMPRELAYPIN, 1);	//Turn on/off the pump
+	printHeader(NUMSENSORS, NUMFIELDS);
 }
 
 void loop() {
 	if(queryTimer.check()){
-		/*querySensor(1, 0);
-		querySensor(1, 1);
-		querySensor(1, 2);
-		querySensor(1, 3);
-
-		
-		querySensor(1, 6);
-		querySensor(1, 7);
-		querySensor(1, 8);
-		querySensor(1, 9);
-		querySensor(1, 10);
-		querySensor(1, 11);
-
-		querySensor(1, 12);
-		querySensor(1, 13);*/
-
-		for(uint8_t i=0; i<=14; i++){
+		for(uint8_t i=0; i<=15; i++){
 			querySensor(1, i);
+			delay(20);
 		}
 
-		Serial.print("DATA\t0\t0\t0\t");	//Special data line for the control
-		Serial.print(potVal);
 		Serial.println();
 	}
-
-	potVal = analogRead(POTPIN);
-	analogWrite(PUMPPWMPIN, potVal/4);
 }

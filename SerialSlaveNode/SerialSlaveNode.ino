@@ -18,28 +18,38 @@ I2CSlave slave;
 
 
 
-//Digital Sensors
-DigitalSensor tankLo(2, 4, 0);
-DigitalSensor tankHi(3, 5, 0);
 
-//Analog Sensors
+
+//Analog Sensors, RTDs
 AnalogSensor sensor1(A0, 0);
 AnalogSensor sensor2(A1, 1);
 AnalogSensor sensor3(A2, 2);
 AnalogSensor sensor4(A3, 3);
 
+//Digital Sensors
+DigitalSensor tankLo(12, 4, 0);
+DigitalSensor tankHi(13, 5, 0);
+
+//Pressure
+AnalogSensor pt1(A15, 6);
+AnalogSensor pt2(A14, 7);
+AnalogSensor pt3(A13, 8);
+AnalogSensor pt4(A12, 9);
+AnalogSensor pt5(A11, 10);
+AnalogSensor pt6(A10, 11);
+
+//Flow
+AnalogSensor fq1(A9, 12);
+AnalogSensor fq2(A8, 13);
+AnalogSensor fq3(A7, 14);
+
+//Potentiometer
 AnalogSensor pot(A6, 15);
 
-AnalogSensor fq3(A7, 14);
-AnalogSensor fq2(A8, 13);
-AnalogSensor fq1(A9, 12);
 
-AnalogSensor pt6(A10, 11);
-AnalogSensor pt5(A11, 10);
-AnalogSensor pt4(A12, 9);
-AnalogSensor pt3(A13, 8);
-AnalogSensor pt2(A14, 7);
-AnalogSensor pt1(A15, 6);
+
+
+
 
 
 
