@@ -39,9 +39,9 @@ AnalogSensor pt5(A11, 10);
 AnalogSensor pt6(A10, 11);
 
 //Flow
-AnalogSensor fq1(A9, 12);
+AnalogSensor fq3(A9, 12);
 AnalogSensor fq2(A8, 13);
-AnalogSensor fq3(A7, 14);
+AnalogSensor fq1(A7, 14);
 
 //Potentiometer
 AnalogSensor pot(A6, 15);

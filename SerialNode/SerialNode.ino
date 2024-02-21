@@ -35,12 +35,17 @@ void querySensor(uint8_t nodeID, uint8_t sensorID){
 	Serial.print(type);
 	Serial.print('\t');
 	Serial.println(value);*/
-	Serial.print(nodeID);
+
+	
+	/*Serial.print(nodeID);
 	Serial.print(',');
 	Serial.print(id);
 	Serial.print(',');
 	Serial.print(type);
 	Serial.print(',');
+	Serial.print(value);
+	Serial.print(',');*/
+
 	Serial.print(value);
 	Serial.print(',');
 }
@@ -48,17 +53,22 @@ void querySensor(uint8_t nodeID, uint8_t sensorID){
 void printHeader(uint8_t numSensors, uint8_t numFields){
 	Serial.print("HEADER,");
 	for(uint8_t i=0; i<numSensors; i++){
-		for(uint8_t j=0; j<numFields; j++){
+		//for(uint8_t j=0; j<numFields; j++){
 			/*Serial.print("Sensor ID ");
 			Serial.print(i);
 			Serial.print(" field ");
 			Serial.print(j);
 			Serial.print(",");*/
-			Serial.print(i);
-			Serial.print(":");
-			Serial.print(j);
-			Serial.print(",");
-		}
+			//Serial.print(i);
+			//Serial.print(":");
+			//Serial.print(j);
+			//Serial.print(",");
+		//}
+
+
+		Serial.print(i);
+		Serial.print(":3,");	//Only print data field
+
 	}
 	Serial.println();
 }

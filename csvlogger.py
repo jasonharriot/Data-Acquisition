@@ -17,7 +17,7 @@ ser = None
 
 
 os.makedirs('data', exist_ok=True)
-
+header = ''
 
 
 while 1:
@@ -56,8 +56,29 @@ while 1:
 	dataline = f'{timestamp},{line}\n'
 	outStr += dataline
 		
-	with open(f'data/{datafilename}', 'a+') as file:	#This may cause a high write frequency. Don't use on a computer with a mechanical HDD!
-		file.write(outStr)
-		file.close()
+	writesuccess = False
+	while not writesuccess:
+		try:
+			with open(f'data/{datafilename}', 'a+') as file:	#This may cause a high write frequency. Don't use on a computer with a mechanical HDD!
+				file.write(outStr)
+				file.close()
+				writesuccess = True
+		except:
+			print('Could not open file for writing')
+			
+		time.sleep(.05)
 		
-	sys.stdout.write(outStr)
+		
+	#Find the header so we can print it pretty
+	if line.startswith('HEADER'):
+		header = dataline.split(',')
+	
+	out = outStr.split(',')
+	
+	prettyprintstring = ''
+	
+	prettyprintstring += '\n'
+	prettyprintstring += '\t'.join(header)
+	prettyprintstring += '\t'.join(out)
+	
+	sys.stdout.write(prettyprintstring)
