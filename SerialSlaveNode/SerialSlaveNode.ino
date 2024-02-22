@@ -8,12 +8,10 @@
 //#include "DAQSensor.h"
 #include "I2CSlave.h"
 
-#define PUMPPWMPIN 8
-#define PUMPRELAYPIN 9
+//#define PUMPPWMPIN 8
+//#define PUMPRELAYPIN 9
 
 I2CSlave slave;
-
-//Sensor testSensor(13, 99);
 
 
 
@@ -100,10 +98,7 @@ void setup() {
 	Wire.onRequest(onRequest);
 	Wire.onReceive(onReceive);
 
-	pinMode(PUMPPWMPIN, OUTPUT);
-
-	digitalWrite(PUMPRELAYPIN, 1);
-
+	pinMode(slave.pumpPWMPin, OUTPUT);
 	Serial.println("Serial slave node ready!");
 }
 
@@ -111,6 +106,19 @@ void loop() {
 	slave.update();
 	//sensor1.summary();
 	//pt1.summary();
-	analogWrite(PUMPPWMPIN, pot.getValue()/4);	//Special output for pump
-	delay(100);
+	double pres1 = pt1.getValue()*.073314-15;
+	double pres2 = pt2.getValue()*.073314-15;
+	double pres3 = pt3.getValue()*.073314-15;
+
+	double maxPres = max(pres1, max(pres2, pres3));	//PSI gauge
+
+	//Serial.print("Highest pressure: ");
+	//Serial.println(maxPres);
+	
+	if(maxPres >= 30){
+		analogWrite(slave.pumpPWMPin, 0);
+		Serial.println("Overpressure!");
+	} else{
+		analogWrite(slave.pumpPWMPin, pot.getValue()/4);	//Special output for pump
+	}
 }

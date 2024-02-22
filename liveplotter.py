@@ -16,8 +16,8 @@ numsensors = 16
 fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
 numfields = len(fieldnames)
 
-startdate = datetime.datetime.strptime('2024-02-21T17-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
-#startdate = datetime.datetime.now() - datetime.timedelta(minutes=1)
+#startdate = datetime.datetime.strptime('2024-02-21T17-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
+
 
 #enddate = datetime.datetime.strptime('2024-02-21T14-00-00', "%Y-%m-%dT%H-%M-%S")
 enddate = None
@@ -75,6 +75,9 @@ def readdataarray():
 	for file in filelist:
 		print(f'Loading: {file}')
 		datastr += open(file, 'r').read()
+		
+		
+	startdate = datetime.datetime.now() - datetime.timedelta(minutes=30)
 
 
 	data = []	#Array to hold all the data, in proper order. A dataframe will be made from this later on, but constructing the data as a simple array first is fastest.
@@ -155,9 +158,13 @@ def readdataarray():
 			if row[i] == '' or row[i] is None:
 				continue
 				
+				
 			value = row[i]
 			if value.isnumeric():
 				value = int(value)
+				
+			elif value == 'err':
+				value = None
 				
 			#print(f'Including elemnt {i} ({row[i]})')
 				
@@ -172,6 +179,7 @@ def readdataarray():
 			data.append(datarow)
 			
 			
+	print(f'Loaded {len(data)} rows')
 	return header, data
 
 
@@ -189,9 +197,12 @@ fig2 = fig
 fig3 = fig
 
 while 1:
-	while time.time() - lastdrawtime < 2:
+	while 1:
 		#time.sleep(.1)
 		plt.pause(1)
+		
+		if time.time() - lastdrawtime > 2:
+			break
 		
 	print(f'Draw!')
 		
@@ -325,9 +336,9 @@ while 1:
 
 	plt.draw()
 
-	if not docontinuous:
-		plt.show()
-		break
+	#if not docontinuous:
+	#	plt.show()
+	#	break
 
 
 

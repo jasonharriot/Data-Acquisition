@@ -5,7 +5,7 @@
 #include "DAQSensor.h"
 
 #define NUMSENSORS 256
-#define BUFSIZE 8
+#define BUFSIZE 16
 
 class I2CSlave{
 	public:
@@ -17,6 +17,10 @@ class I2CSlave{
 		void onReceive(int);
 		
 		void update();
+		
+		void setActuator(uint8_t, uint8_t);
+		
+		int pumpPWMPin = 8;
 		
 		
 	private:

@@ -2,7 +2,6 @@
 #include "I2CSlave.h"
 #include "DAQSensor.h"
 
-
 uint8_t I2CSlave::init(){
 	return 1;
 }
@@ -43,12 +42,14 @@ void I2CSlave::onRequest(){
 	uint8_t count, sensorIndex, valueHigh, valueLow;
 	uint16_t value;
 	Sensor * sensor;
+	
 	switch(v_command){
 		case 1:
 			count = getSensorCount();
 			Wire.write(count);
 			numSensorsLastReported = count;
 			break;
+			
 		case 2:
 			//Report sensor data. Sensor index is first parameter
 			sensorIndex = v_data[0];
@@ -66,6 +67,7 @@ void I2CSlave::onRequest(){
 			lastValHigh = valueHigh;
 			lastValLow = valueLow;
 			break;
+			
 		default:
 			break;
 	}
@@ -73,12 +75,40 @@ void I2CSlave::onRequest(){
 
 void I2CSlave::onReceive(int nBytes){
 	v_command = Wire.read();
+	
+	memset(v_data, 0, BUFSIZE);
 	for(uint8_t i=0; Wire.available(); i++){
 		uint8_t x = Wire.read();
 		v_data[i] = x;
 	}
 	
 	v_dataFlag = 1;
+	
+	switch(v_command){	//Blind commands (no response)
+		case 3:
+			//Set actuator state
+			setActuator(v_data[0], v_data[1]);
+			break;
+	}
+}
+
+
+void I2CSlave::setActuator(uint8_t actuatorID, uint8_t actuatorValue){
+	//Hardcoded actuators. Can't bother to be dynamic.
+	
+	//Serial.print("Actuator: ");
+	//Serial.println(actuatorID);
+	//Serial.print("Value: ");
+	//Serial.println(actuatorValue);
+	
+	switch(actuatorID){
+		case 0:
+			analogWrite(pumpPWMPin, actuatorValue);
+			break;
+			
+		default:
+			break;
+	}
 }
 
 void I2CSlave::update(){
@@ -94,43 +124,19 @@ void I2CSlave::update(){
 	}
 	
 	if(v_dataFlag){
-		v_dataFlag = 0;
+		Serial.print("Command Recv'd (");
+		Serial.print(v_command);
+		Serial.print("): ");
 		for(uint8_t i=0; i<BUFSIZE; i++){
 			Serial.print(v_data[i]);
+			Serial.print(' ');
 		}
 		Serial.println();
 		
-		Serial.print("Command: ");
-		Serial.print(v_command);
-		Serial.println();
+		v_dataFlag = 0;
+		
+		
+		
+		
 	}
-	
-	//Serial.print("Last report: ");
-	//Serial.println(numSensorsLastReported);
-	
-	//uint8_t data = v_data;
-	
-	/*uint8_t repSize = 0;
-	switch(data){
-		case 0:
-			Serial.println("Preparing report");
-			repSize = 1 + getSensorCount();
-			Serial.print("Sending report size: ");
-			Serial.print(repSize);
-			Serial.println();
-			Wire.write(repSize);
-			for(uint8_t i = 0; i < getSensorCount(); i++){
-				Wire.write(getSensor(i)->getType());
-			}
-			break;
-		case 1:
-			Serial.println("Preparing readout");
-			break;
-			
-		default:
-			Serial.println("Unknown command");
-			break;
-	}
-	
-	Serial.println("Done responding.");*/
 }

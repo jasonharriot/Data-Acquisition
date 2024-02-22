@@ -3,6 +3,7 @@ import serial
 import os
 import datetime
 import time
+import tkinter
 
 comport = sys.argv[1]
 linetimeout = 1000	#If this is too short the whole line won't be read.
