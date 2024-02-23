@@ -124,14 +124,14 @@ void I2CSlave::update(){
 	}
 	
 	if(v_dataFlag){
-		Serial.print("Command Recv'd (");
-		Serial.print(v_command);
-		Serial.print("): ");
+		//Serial.print("Command Recv'd (");
+		//Serial.print(v_command);
+		//Serial.print("): ");
 		for(uint8_t i=0; i<BUFSIZE; i++){
-			Serial.print(v_data[i]);
-			Serial.print(' ');
+			//Serial.print(v_data[i]);
+			//Serial.print(' ');
 		}
-		Serial.println();
+		//Serial.println();
 		
 		v_dataFlag = 0;
 		

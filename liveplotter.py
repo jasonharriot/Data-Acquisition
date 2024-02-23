@@ -77,7 +77,7 @@ def readdataarray():
 		datastr += open(file, 'r').read()
 		
 		
-	startdate = datetime.datetime.now() - datetime.timedelta(minutes=30)
+	startdate = datetime.datetime.now() - datetime.timedelta(minutes=1)
 
 
 	data = []	#Array to hold all the data, in proper order. A dataframe will be made from this later on, but constructing the data as a simple array first is fastest.
@@ -197,12 +197,14 @@ fig2 = fig
 fig3 = fig
 
 while 1:
-	while 1:
+	#while 1:
 		#time.sleep(.1)
-		plt.pause(1)
+		#plt.pause(1)
 		
-		if time.time() - lastdrawtime > 2:
-			break
+		#if time.time() - lastdrawtime > 2:
+		#	break
+		
+	plt.pause(1)
 		
 	print(f'Draw!')
 		

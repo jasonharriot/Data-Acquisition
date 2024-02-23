@@ -11,10 +11,12 @@
 //#define PUMPPWMPIN 8
 //#define PUMPRELAYPIN 9
 
+#define ALARMPIN 11
+
 I2CSlave slave;
 
-
-
+Timer safetyTimer(1000);
+uint8_t safe = 0;
 
 
 
@@ -54,7 +56,10 @@ AnalogSensor pot(A6, 15);
 
 
 
-
+void unSafe(){
+	safe = 0;
+	safetyTimer.reset();
+}
 
 
 
@@ -99,13 +104,20 @@ void setup() {
 	Wire.onReceive(onReceive);
 
 	pinMode(slave.pumpPWMPin, OUTPUT);
+	pinMode(ALARMPIN, OUTPUT);
 	Serial.println("Serial slave node ready!");
 }
 
 void loop() {
 	slave.update();
-	//sensor1.summary();
-	//pt1.summary();
+
+	if(safetyTimer.check()){	//It is safe only after the timer expires
+		safe = 1;
+	}
+
+
+	//Safety checks
+	//Pressure check
 	double pres1 = pt1.getValue()*.073314-15;
 	double pres2 = pt2.getValue()*.073314-15;
 	double pres3 = pt3.getValue()*.073314-15;
@@ -115,10 +127,27 @@ void loop() {
 	//Serial.print("Highest pressure: ");
 	//Serial.println(maxPres);
 	
-	if(maxPres >= 30){
-		analogWrite(slave.pumpPWMPin, 0);
+	if(maxPres >= 30){	//2 Bar
 		Serial.println("Overpressure!");
-	} else{
-		analogWrite(slave.pumpPWMPin, pot.getValue()/4);	//Special output for pump
+		unSafe();
+	}
+
+	//Tank low level
+	if(!tankLo.getValue()){
+		Serial.println("Tank level low!");
+		unSafe();
+	}
+
+	
+
+	if(safe){	//Safe condition outputs
+		digitalWrite(ALARMPIN, 0);
+		analogWrite(slave.pumpPWMPin, pot.getValue()/4);
+		
+	} else{	//Unsafe condition outputs
+		//Disable pumps, etc.
+		//Sound alarm
+		digitalWrite(ALARMPIN, 1);
+		analogWrite(slave.pumpPWMPin, 0);
 	}
 }
