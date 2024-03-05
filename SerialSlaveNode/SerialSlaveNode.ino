@@ -31,12 +31,12 @@ DigitalSensor tankLo(12, 4, 0);
 DigitalSensor tankHi(13, 5, 0);
 
 //Pressure
-AnalogSensor pt1(A15, 6);
-AnalogSensor pt2(A14, 7);
-AnalogSensor pt3(A13, 8);
-AnalogSensor pt4(A12, 9);
-AnalogSensor pt5(A11, 10);
-AnalogSensor pt6(A10, 11);
+AnalogSensor pt1(A10, 11);
+AnalogSensor pt2(A11, 10);
+AnalogSensor pt3(A12, 9);
+AnalogSensor pt4(A13, 8);
+AnalogSensor pt5(A14, 7);
+AnalogSensor pt6(A15, 6);
 
 //Flow
 AnalogSensor fq3(A9, 12);
@@ -118,11 +118,20 @@ void loop() {
 
 	//Safety checks
 	//Pressure check
-	double pres1 = pt1.getValue()*.073314-15;
-	double pres2 = pt2.getValue()*.073314-15;
-	double pres3 = pt3.getValue()*.073314-15;
+	double pres1 = pt1.getValue()*.061050-12.45;
+	double pres2 = pt2.getValue()*.061050-12.45;
+	double pres3 = pt3.getValue()*.061050-12.45;
+	double pres4 = pt4.getValue()*.061050-12.45;
+	double pres5 = pt5.getValue()*.061050-12.45;
+	double pres6 = pt6.getValue()*.061050-12.45;
 
-	double maxPres = max(pres1, max(pres2, pres3));	//PSI gauge
+	double maxPres = 0;
+	maxPres = max(pres1, maxPres);	//PSI gauge
+	maxPres = max(pres2, maxPres);
+	maxPres = max(pres3, maxPres);
+	maxPres = max(pres4, maxPres);
+	maxPres = max(pres5, maxPres);
+	maxPres = max(pres6, maxPres);
 
 	//Serial.print("Highest pressure: ");
 	//Serial.println(maxPres);
