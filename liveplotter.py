@@ -30,7 +30,10 @@ enddate = None
 docontinuous = False
 stopflag = False
 	
-	
+
+phase1='Base'
+phase2='Acid'
+phase3='Brine'
 	
 	
 	
@@ -331,7 +334,7 @@ while not stopflag:
 	ax11.plot(df['Time'], pt5, linewidth=1, markersize=0, color='blue', linestyle=(0, (2, 10)))
 	ax11.plot(df['Time'], pt6, linewidth=1, markersize=0, color='green', linestyle=(0, (2, 10)))
 
-	ax11.legend(['Phase 1 pre', 'Phase 2 pre', 'Phase 3 pre', 'Phase 1 post', 'Phase 2 post', 'Phase 3 post'])
+	ax11.legend([f'{phase1} pre', f'{phase2} pre', f'{phase3} pre', f'{phase1} post', f'{phase2} post', f'{phase3} post'])
 
 	#ax12 = ax11.twinx()
 	#ax12.set_ylabel(r'Pump speed')
@@ -366,7 +369,7 @@ while not stopflag:
 	ax21.plot(df['Time'], fq2, linewidth=1, markersize=0, color='blue')
 	ax21.plot(df['Time'], fq3, linewidth=1, markersize=0, color='green')
 
-	ax21.legend(['FQ1', 'FQ2', 'FQ3'])
+	ax21.legend([f'{phase1}', f'{phase2}', f'{phase3}'])
 
 	
 	ax31.set_title('')
@@ -381,7 +384,7 @@ while not stopflag:
 	ax31.plot(df['Time'], rtd3, linewidth=1, markersize=0, color='green')
 	ax31.plot(df['Time'], rtd4, linewidth=1, markersize=0, color='red')
 
-	ax31.legend(['RTD1', 'RTD2', 'RTD3', 'RTD4'])
+	ax31.legend([f'{phase1}', f'{phase2}', f'{phase3}', f'Brine Supply'])
 
 	plt.draw()
 
