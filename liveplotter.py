@@ -52,12 +52,13 @@ def rollingaverage(a, window):
 
 
 
-if len(sys.argv) < 2:	#Data files should be specified as parameters. Single file, multiple files, or single directory of (only!) files
-	print("Specify files or directory.")
+#if len(sys.argv) < 2:	#Data files should be specified as parameters. Single file, multiple files, or single directory of (only!) files
+#	print("Specify files or directory.")
 	
 
 
-arg1 = sys.argv[1]
+#arg1 = sys.argv[1]
+arg1 = 'data'	#Data directory
 
 def onpress(event):
 	global stopflag
@@ -323,7 +324,7 @@ while not stopflag:
 	ax11.set_title('')
 	ax11.set_ylabel(r'Guage Pressure ($Lb-in^{-2}$)')
 	ax11.set_xlabel('Time')
-	ax11.set_ylim([-5, 55])
+	ax11.set_ylim([-5, 30])
 	ax11.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(ax11.xaxis.get_major_locator()))
 	ax11.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=60))
 

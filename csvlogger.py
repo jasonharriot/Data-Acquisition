@@ -5,15 +5,8 @@ import datetime
 import time
 import tkinter
 
-comport = sys.argv[1]
+comport = 'COM5'
 linetimeout = 1000	#If this is too short the whole line won't be read.
-					#Espec
-
-if len(sys.argv) < 2:
-	print("Specify COM port")
-	exit(1)
-
-
 ser = None
 
 
@@ -32,11 +25,9 @@ def readline():
 					ser = serial.Serial(comport, 115200)
 				
 				except serial.serialutil.SerialException as sererr:
-					print("Couldn't open serial port.")
-					
-					if ser is None:
-						print("Serial port couldn't be opened on first run. Exiting.")
-						exit(1)
+					print(f'Couldn\'t open serial port ({comport}).')
+					time.sleep(1)
+					continue
 				
 			if not ser.in_waiting:
 				time.sleep(.1)
@@ -79,9 +70,12 @@ while 1:	#Main loop
 					writesuccess = True
 			except:
 				print(f'Could not open file for writing header: {datafilename}')
-				time.sleep(.05)
+				time.sleep(1)
 				
 	line = readline()	#Get a line or None from serial port
+	if line is None:
+		print(f'Couldn\'t read line from serial port ({comport})')
+		continue
 	
 	
 	dataline = f'{timestamp},{line}\n'
@@ -95,7 +89,7 @@ while 1:	#Main loop
 				writesuccess = True
 		except:
 			print('Could not open file for writing')
-			time.sleep(.05)
+			time.sleep(1)
 		
 		
 	#Find the header so we can print it pretty
@@ -108,4 +102,4 @@ while 1:	#Main loop
 	prettyprintstring += '\t'.join(header.split(','))
 	prettyprintstring += '\t'.join(dataline.split(','))
 	
-	#sys.stdout.write(prettyprintstring)
+	sys.stdout.write(prettyprintstring)
