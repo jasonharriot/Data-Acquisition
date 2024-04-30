@@ -18,43 +18,49 @@ matplotlib.use("QtAgg")	#This prevents the plot from grabbing focus from other w
 #setup
 numsensors = 16
 fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
-numfields = len(fieldnames)
 
-livestartdate = False
+decimation = 10
+
+livestartdate = True
 startdate = datetime.datetime.strptime('2024-04-30T13-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
-
 
 #enddate = datetime.datetime.strptime('2024-03-04T15-00-00', "%Y-%m-%dT%H-%M-%S")
 enddate = None
-	
-docontinuous = False
-stopflag = False
-	
+
+timelabelinterval = 2	#minutes
 
 phase1='1-Base'
 phase2='2-Acid'
 phase3='3-Brine'
-	
-	
-	
-	
-	
+
+colors = ['black', 'blue', 'green', 'red', 'pink', 'orange', 'grey']
+
+
+
+
+numfields = len(fieldnames)
+stopflag = False
 
 lastdrawtime = 0
 
+fig, ((ax11, ax12), (ax21, ax22), (ax31, ax32)) = plt.subplots(3, 2)
+axpressure = ax11
+axflow = ax21
+axtemp = ax31
+axcurrent = ax32
+axvoltage = ax22
 
-#def getvalues(df, nodeid, sensorid):
-	#return df.loc[(df['Node ID'] == nodeid) & (df['Sensor ID'] == sensorid)]
+ax11.get_xaxis().set_visible(False)
+ax21.get_xaxis().set_visible(False)
+ax12.get_xaxis().set_visible(False)
+ax22.get_xaxis().set_visible(False)
+
+
 
 def rollingaverage(a, window):
 	ret = np.convolve(a, np.ones(window), 'same')/window	#Apply rolling average. Mode handles edge condition. Divide by window.
 	return ret
 
-
-
-#if len(sys.argv) < 2:	#Data files should be specified as parameters. Single file, multiple files, or single directory of (only!) files
-#	print("Specify files or directory.")
-	
 
 def onpress(event):
 	global stopflag
@@ -147,6 +153,10 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 			rowindex+=1
 			continue
 			
+		if not (rowindex%decimation)==0:
+			rowindex+=1
+			continue
+			
 		#print(f'Row {rowindex} is data.')
 		
 		date = None
@@ -177,11 +187,11 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 		for i in range(1, len(header)):
 			value = row[i]
 			
-			if value.isnumeric():
-				value = int(value)
+			#if value.isnumeric():
+			value = float(value)
 				
-			elif value == 'err':
-				value = None
+			#elif value == 'err':
+			#	value = None
 				
 			#print(f'Including elemnt {i} ({row[i]})')
 				
@@ -295,6 +305,13 @@ def readdataarray():
 		if not row[1] == 'DATA':
 			rowindex+=1
 			continue
+			
+		if not (rowindex%decimation)==0:
+			rowindex+=1
+			continue
+			
+		#print(f'Row {rowindex} is data.')
+		
 		
 		date = None
 		try:
@@ -356,45 +373,21 @@ def readdataarray():
 	rowindex+=1
 	return header, data
 
-#################
-#fig1, ax11 = plt.subplots()
-#fig2, ax21 = plt.subplots()
-#fig3, ax31 = plt.subplots()
-
-fig, (ax11, ax21, ax31) = plt.subplots(1, 3)
-
-
-fig1 = fig
-fig2 = fig
-fig3 = fig
-
-fig.canvas.mpl_connect('key_press_event', onpress)
-print(f'Press Q to quit at any time.')
-
-while not stopflag:
-	#while 1:
-		#time.sleep(.1)
-		#plt.pause(1)
-		
-		#if time.time() - lastdrawtime > 2:
-		#	break
-		
-	plt.pause(.2)
-		
+def loop():
+	global stopflag
+	
 	print(f'Draw!')
 	lastdrawtime = time.time()
 	
-	
-	
-	
+	startdate = datetime.datetime.now()-datetime.timedelta(minutes=10)
 	
 	esheader, esdata = readesdataarray()
 	
-	if esheader is None:
-		print(f'No ES header available!')
+	if esheader is None or len(esdata)==0:
+		print(f'No ES header/data available!')
 		time.sleep(5)
-		continue
-		
+		return
+	
 	esdf = pandas.DataFrame(esdata)
 	esdf.columns = esheader
 	
@@ -405,10 +398,10 @@ while not stopflag:
 	
 		
 	header, data = readdataarray()
-	if header is None:
-		print(f'No header available!')
+	if header is None or len(data)==0:
+		print(f'No header/data available!')
 		time.sleep(5)
-		continue
+		return
 		
 	df = pandas.DataFrame(data)
 
@@ -448,51 +441,32 @@ while not stopflag:
 
 	pot = df[f'1:15:Value']/1024
 	
-	v1 = esdf[f'V1']*1000*1.9 + .02		#2024-04-30 Calibration with CC PSU
-	v2 = esdf[f'V2']*1000*1.97 + 2.48
-	v3 = esdf[f'V3']*1000*1.58 - .25
-	v4 = esdf[f'V4']*1000*1.29 + .03
-	v5 = esdf[f'V5']*1000*1.72 - .09
-	v6 = esdf[f'V6']*1000*1.54 + .09
+	v1 = esdf[f'V1']*1000*.53-.01		#2024-04-30 Calibration with CC PSU
+	v2 = esdf[f'V2']*1000*.5-1.13
+	v3 = esdf[f'V3']*1000*.63+.16
+	v4 = esdf[f'V4']*1000*.77-.02
+	v5 = esdf[f'V5']*1000*.58+.05
+	v6 = esdf[f'V6']*1000*.65-.06
 
-	#if 0:	#Draw fft?
-	#	# Number of samplepoints
-	#	N = len(rtd0['tempvalue'])
-	#	# sample spacing
-	#	T = .1
-	#	f=1/T
-	#	yf = scipy.fftpack.fft(rtd0['tempvalue'].values)
-	#	xf = np.linspace(0.0, f/2, N//2)
-
-	#	figfft, axfft = plt.subplots()
-	#	axfft.plot(xf, 2.0/N * np.abs(yf[:N//2]))
-	#	axfft.set_yscale('log')
-	#	plt.draw()
-
-
-
-	ax11.cla()
-	ax21.cla()
-	ax31.cla()
 
 	
-	ax11.set_title('')
-	ax11.set_ylabel(r'Guage Pressure ($Lb-in^{-2}$)')
-	ax11.set_xlabel('Time')
-	ax11.set_ylim([-5, 30])
-	ax11.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(ax11.xaxis.get_major_locator()))
-	ax11.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=60))
+	axpressure.set_title('')
+	axpressure.set_ylabel(r'Guage Pressure ($Lb-in^{-2}$)')
+	axpressure.set_xlabel('Time')
+	axpressure.set_ylim([-5, 30])
+	axpressure.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axpressure.xaxis.get_major_locator()))
+	axpressure.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 
-	ax11.plot(df['Time'], pt1, linewidth=1, markersize=0, color='black')
-	ax11.plot(df['Time'], pt2, linewidth=1, markersize=0, color='blue')
-	ax11.plot(df['Time'], pt3, linewidth=1, markersize=0, color='green')
-	ax11.plot(df['Time'], pt4, linewidth=1, markersize=0, color='black', linestyle=(0, (2, 10)))
-	ax11.plot(df['Time'], pt5, linewidth=1, markersize=0, color='blue', linestyle=(0, (2, 10)))
-	ax11.plot(df['Time'], pt6, linewidth=1, markersize=0, color='green', linestyle=(0, (2, 10)))
+	axpressure.plot(df['Time'], pt1, linewidth=1, markersize=0, color=colors[0])
+	axpressure.plot(df['Time'], pt2, linewidth=1, markersize=0, color=colors[1])
+	axpressure.plot(df['Time'], pt3, linewidth=1, markersize=0, color=colors[2])
+	axpressure.plot(df['Time'], pt4, linewidth=1, markersize=0, color=colors[3], linestyle=(0, (2, 10)))
+	axpressure.plot(df['Time'], pt5, linewidth=1, markersize=0, color=colors[4], linestyle=(0, (2, 10)))
+	axpressure.plot(df['Time'], pt6, linewidth=1, markersize=0, color=colors[5], linestyle=(0, (2, 10)))
 
-	ax11.legend([f'{phase1} pre', f'{phase2} pre', f'{phase3} pre', f'{phase1} post', f'{phase2} post', f'{phase3} post'])
+	axpressure.legend([f'{phase1} pre', f'{phase2} pre', f'{phase3} pre', f'{phase1} post', f'{phase2} post', f'{phase3} post'])
 
-	#ax12 = ax11.twinx()
+	#ax12 = axpressure.twinx()
 	#ax12.set_ylabel(r'Pump speed')
 	#ax12.set_ylim([-.5, 1.5])
 	#yticks = ax12.yaxis.get_major_ticks()
@@ -514,37 +488,67 @@ while not stopflag:
 
 
 	
-	ax21.set_title('')
-	ax21.set_ylim([-100, 1500])
-	ax21.set_ylabel(r'Flow ($mL-min^{-1}$)')
-	ax21.set_xlabel('Time')
-	ax21.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(ax21.xaxis.get_major_locator()))
-	ax21.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=60))
+	axflow.set_title('')
+	axflow.set_ylim([-100, 1500])
+	axflow.set_ylabel(r'Flow ($mL-min^{-1}$)')
+	axflow.set_xlabel('Time')
+	axflow.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axflow.xaxis.get_major_locator()))
+	axflow.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 
-	ax21.plot(df['Time'], fq1, linewidth=1, markersize=0, color='black')
-	ax21.plot(df['Time'], fq2, linewidth=1, markersize=0, color='blue')
-	ax21.plot(df['Time'], fq3, linewidth=1, markersize=0, color='green')
+	axflow.plot(df['Time'], fq1, linewidth=1, markersize=0, color=colors[0])
+	axflow.plot(df['Time'], fq2, linewidth=1, markersize=0, color=colors[1])
+	axflow.plot(df['Time'], fq3, linewidth=1, markersize=0, color=colors[2])
 
-	ax21.legend([f'{phase1}', f'{phase2}', f'{phase3}'])
+	axflow.legend([f'{phase1}', f'{phase2}', f'{phase3}'])
 
 	
-	ax31.set_title('')
-	ax31.set_ylabel(r'Temperature ($\degree C$)')
-	ax31.set_ylim([10, 30])
-	ax31.set_xlabel('Time')
-	ax31.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(ax31.xaxis.get_major_locator()))
-	ax31.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=60))
+	
+	
+	axtemp.set_title('')
+	axtemp.set_ylabel(r'Temperature ($\degree C$)')
+	axtemp.set_ylim([10, 30])
+	axtemp.set_xlabel('Time')
+	axtemp.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axtemp.xaxis.get_major_locator()))
+	axtemp.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 
-	ax31.plot(df['Time'], rtd1, linewidth=1, markersize=0, color='black')
-	ax31.plot(df['Time'], rtd2, linewidth=1, markersize=0, color='blue')
-	ax31.plot(df['Time'], rtd3, linewidth=1, markersize=0, color='green')
-	ax31.plot(df['Time'], rtd4, linewidth=1, markersize=0, color='red')
+	axtemp.plot(df['Time'], rtd1, linewidth=1, markersize=0, color=colors[0])
+	axtemp.plot(df['Time'], rtd2, linewidth=1, markersize=0, color=colors[1])
+	axtemp.plot(df['Time'], rtd3, linewidth=1, markersize=0, color=colors[2])
+	axtemp.plot(df['Time'], rtd4, linewidth=1, markersize=0, color=colors[3])
 
-	ax31.legend([f'{phase1}', f'{phase2}', f'{phase3}', f'Brine Supply'])
+	axtemp.legend([f'{phase1}', f'{phase2}', f'{phase3}', f'Brine Supply'])
+
+
+	axcurrent.set_title('')
+	axcurrent.set_ylabel(r'Current ($A$)')
+	axcurrent.set_ylim([0, 40])
+	axcurrent.set_xlabel('Time')
+	axcurrent.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axcurrent.xaxis.get_major_locator()))
+	axcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
+	
+	channels = [v1, v2, v3, v4, v5, v6]
+	names = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+
+	for i in range(0, len(channels)):
+		axcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
+
+	axcurrent.legend(names)
+
+
 
 	plt.draw()
 
-	#if not docontinuous:
-	#	plt.show()
-	#	break
+if __name__ == '__main__':
+	fig.canvas.mpl_connect('key_press_event', onpress)
+	print(f'Press Q to quit at any time.')
 
+	while not stopflag and plt.fignum_exists(fig.number):
+		try:
+			loop()
+			plt.pause(.2)
+			
+		except Exception as e:
+			print(f'Error running plotter. Auto retry...')
+			print(e)
+			time.sleep(5)
+		

@@ -47,6 +47,8 @@ def readline():
 	return line
 	
 def loop():
+	global lastdatafilename
+	global header
 	timestamp = datetime.datetime.now().isoformat()[:22].replace(':', '-').replace('.', '_')
 	
 	datafilename = f'{timestamp[:13]}.csv'
@@ -74,7 +76,7 @@ def loop():
 	line = readline()	#Get a line or None from serial port
 	if line is None:
 		print(f'Couldn\'t read line from serial port ({comport})')
-		continue
+		return
 	
 	
 	dataline = f'{timestamp},{line}\n'
@@ -108,6 +110,8 @@ if __name__ == '__main__':
 	while 1:	#Main loop
 		try:
 			loop()
-		except:
+			time.sleep(.1)
+		except Exception as e:
 			print(f'Error running CSV logger script. Check connections. Auto retry...')
+			print(e)
 			time.sleep(5)

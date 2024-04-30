@@ -148,7 +148,7 @@ if __name__ == '__main__':
 			
 			while(1):	#Main loop
 				loop()
-				time.sleep(.5)
+				time.sleep(.1)
 		except Exception as e:
 			print(f'Error running ES power logger script. Check connections. Auto retry...')
 			print(e)
