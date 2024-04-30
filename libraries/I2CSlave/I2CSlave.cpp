@@ -2,7 +2,13 @@
 #include "I2CSlave.h"
 #include "DAQSensor.h"
 
+I2CSlave::I2CSlave(){
+	init();
+}
+
 uint8_t I2CSlave::init(){
+	pinMode(pump1PWMPin, OUTPUT);
+	pinMode(pump2RelayPin, OUTPUT);
 	return 1;
 }
 
@@ -103,7 +109,7 @@ void I2CSlave::setActuator(uint8_t actuatorID, uint8_t actuatorValue){
 	
 	switch(actuatorID){
 		case 0:
-			analogWrite(pumpPWMPin, actuatorValue);
+			analogWrite(pump1PWMPin, actuatorValue);
 			break;
 			
 		default:

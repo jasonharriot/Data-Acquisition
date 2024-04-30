@@ -12,9 +12,10 @@ password = '00000000'
 
 datadirectory = 'esdata'
 
-header = f'Time,V1,V2,V3,V4,V5,V6'	#CSV header
+header = f'Time,V1,V2,V3,V4,V5,V6\n'	#CSV header
 
-channeldict = {1:2,	#Maps ES cell (1-6) to ADAM ADC input
+channeldict = {
+	1:2,	#Maps ES cell (1-6) to ADAM ADC input
 	2:3,
 	3:4,
 	4:5,
@@ -34,9 +35,15 @@ x = requests.get(url, headers=headers)
 
 lastdatafilename = None
 
-if not x.status_code == 200:
-	print(f'You may need to set the password. Couldn\'t get a response from {ipaddress}.')
-	exit()
+def init():
+	if not x.status_code == 200:
+		print(f'You may need to set the password. Couldn\'t get a response from {ipaddress}.')
+		raise Exception(f'Bad response ({x.status_code})')
+		
+	try:
+		os.makedirs(f'{datadirectory}')
+	except FileExistsError:
+		print(f'{datadirectory} already exists (OK)')
 		
 def getVoltages():	#Get voltages in volts
 	x = None
@@ -79,12 +86,10 @@ def getVoltages():	#Get voltages in volts
 	return values
 	
 
-try:
-	os.makedirs(f'{datadirectory}')
-except FileExistsError:
-	print(f'{datadirectory} already exists (OK)')
 
-while(1):
+
+def loop():
+	global lastdatafilename
 	timestamp = datetime.datetime.now().isoformat()[:22].replace(':', '-').replace('.', '_')
 	values = getVoltages()
 	
@@ -94,15 +99,16 @@ while(1):
 	
 
 	lineStr = f'{timestamp},'
-	for channelID, cellID in enumerate(channeldict):
-		#print(f'Cell {cellID}, channel {channelID}, voltage={values[channelID]}')
+	for cellID in channeldict.keys():
+		channelID = channeldict[cellID]
+		print(f'Cell {cellID}, channel {channelID}, voltage={values[channelID]}')
 		lineStr += f'{values[channelID]:.8f},'
 	
 	datafilename = f'{timestamp[:13]}.csv'
 	
 	#Check if the current file is a different file than the last one (and needs a header)
 	if not datafilename == lastdatafilename:	#If the filename changed, write the header to it then continue.
-		print(f'New file! Writing header to {datafilename}: {header}')
+		#print(f'New file! Writing header to {datafilename}: {header}')
 		
 		lastdatafilename = datafilename
 		writesuccess = False	#Retry in case of file lock
@@ -131,5 +137,19 @@ while(1):
 			print('Could not open file for writing')
 			time.sleep(1)
 	
-	print(lineStr)
+	#print(lineStr)
 	
+	
+	
+if __name__ == '__main__':
+	while(1):
+		try:
+			init()
+			
+			while(1):	#Main loop
+				loop()
+				time.sleep(.5)
+		except Exception as e:
+			print(f'Error running ES power logger script. Check connections. Auto retry...')
+			print(e)
+			time.sleep(5)

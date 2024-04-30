@@ -103,7 +103,6 @@ void setup() {
 	Wire.onRequest(onRequest);
 	Wire.onReceive(onReceive);
 
-	pinMode(slave.pumpPWMPin, OUTPUT);
 	pinMode(ALARMPIN, OUTPUT);
 	Serial.println("Serial slave node ready!");
 }
@@ -142,7 +141,7 @@ void loop() {
 	}
 
 	//Tank low level
-	if(!tankLo.getValue()){
+	if(0 && !tankLo.getValue()){	//TEMP: Tank low level disabled. Low level sensor removed for BAC integration testing.
 		Serial.println("Tank level low!");
 		unSafe();
 	}
@@ -151,12 +150,14 @@ void loop() {
 
 	if(safe){	//Safe condition outputs
 		digitalWrite(ALARMPIN, 0);
-		analogWrite(slave.pumpPWMPin, pot.getValue()/4);
+		analogWrite(slave.pump1PWMPin, pot.getValue()/4);
+		digitalWrite(slave.pump2RelayPin, 1);
 		
 	} else{	//Unsafe condition outputs
 		//Disable pumps, etc.
 		//Sound alarm
 		digitalWrite(ALARMPIN, 1);
-		analogWrite(slave.pumpPWMPin, 0);
+		analogWrite(slave.pump1PWMPin, 0);
+		digitalWrite(slave.pump2RelayPin, 0);
 	}
 }

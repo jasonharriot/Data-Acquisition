@@ -45,9 +45,8 @@ def readline():
 			ser.close()
 			
 	return line
-
-
-while 1:	#Main loop
+	
+def loop():
 	timestamp = datetime.datetime.now().isoformat()[:22].replace(':', '-').replace('.', '_')
 	
 	datafilename = f'{timestamp[:13]}.csv'
@@ -103,3 +102,12 @@ while 1:	#Main loop
 	prettyprintstring += '\t'.join(dataline.split(','))
 	
 	sys.stdout.write(prettyprintstring)
+
+
+if __name__ == '__main__':
+	while 1:	#Main loop
+		try:
+			loop()
+		except:
+			print(f'Error running CSV logger script. Check connections. Auto retry...')
+			time.sleep(5)

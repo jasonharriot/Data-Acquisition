@@ -9,6 +9,7 @@
 
 class I2CSlave{
 	public:
+		I2CSlave();
 		uint8_t init();
 		uint8_t add(Sensor*);
 		uint8_t getSensorCount();
@@ -20,7 +21,8 @@ class I2CSlave{
 		
 		void setActuator(uint8_t, uint8_t);
 		
-		int pumpPWMPin = 8;
+		int pump1PWMPin = 8;
+		int pump2RelayPin = 10;
 		
 		
 	private:

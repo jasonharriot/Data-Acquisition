@@ -20,8 +20,8 @@ numsensors = 16
 fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
 numfields = len(fieldnames)
 
-livestartdate = True
-startdate = datetime.datetime.strptime('2024-03-04T12-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
+livestartdate = False
+startdate = datetime.datetime.strptime('2024-04-30T13-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
 
 
 #enddate = datetime.datetime.strptime('2024-03-04T15-00-00', "%Y-%m-%dT%H-%M-%S")
@@ -31,9 +31,9 @@ docontinuous = False
 stopflag = False
 	
 
-phase1='Base'
-phase2='Acid'
-phase3='Brine'
+phase1='1-Base'
+phase2='2-Acid'
+phase3='3-Brine'
 	
 	
 	
@@ -56,41 +56,172 @@ def rollingaverage(a, window):
 #	print("Specify files or directory.")
 	
 
-
-#arg1 = sys.argv[1]
-arg1 = 'data'	#Data directory
-
 def onpress(event):
 	global stopflag
 	sys.stdout.flush()
 	if event.key == 'q':
 		stopflag = True
+		
 
-
-def readdataarray():
+def readesdataarray():	#Modified copy of readdataarray() which reads the ES data file
 	global startdate
+	
+	datadir = 'esdata'
+	
 	if livestartdate:
 		startdate = datetime.datetime.now() - datetime.timedelta(minutes=2)
 	
 	startfile = startdate.strftime("%Y-%m-%dT%H.csv")
 	#startfile = startdate.strftime("%Y-%m-%dT%H-%M.csv")
 	print(f'First file is: {startfile}')
-	
-	
-	if len(sys.argv) > 2:	#If multiple files
-		filelist = sys.argv[1:]
 
-	elif os.path.exists(arg1) and os.path.isdir(arg1):	#If the first argument is a directory
-		fileanddirlist = os.listdir(arg1)
-		fileanddirlist = [os.path.join(arg1, file) for file in fileanddirlist]	#Make the full relative path from the directory list
+	fileanddirlist = os.listdir(datadir)
+	fileanddirlist = [os.path.join(datadir, file) for file in fileanddirlist]	#Make the full relative path from the directory list
+	
+	filelist = []
+	for item in fileanddirlist:
+		if not os.path.isdir(item):
+			filelist.append(item)
 		
-		filelist = []
-		for item in fileanddirlist:
-			if not os.path.isdir(item):
-				filelist.append(item)
+		
+
+	datastr = ''	#Holds all data
+	atstartfile = False
+	print(f'{len(filelist)} files available')
+	print(filelist)
+	
+	for file in filelist:
+		if startfile in file:	#If the file path to be loaded contains the start date
+			atstartfile = True
+			
+		if not atstartfile:
+			continue
+			
+		print(f'Loading: {file}')
+		datastr += open(file, 'r').read()
+		
+	print(f'Loaded {len(datastr)} characters')
+
+
+	data = []	#Array to hold all the data, in proper order. A dataframe will be made from this later on, but constructing the data as a simple array first is fastest.
+
+
+	#print('Preparing fields')
+	
+	
+	f = io.StringIO(datastr)
+	reader = csv.reader(f, delimiter=',')
+	headerfound = False
+	datacolumns = 0	#Number of columns found in the header row. Check against data rows.
+
+	header = None	#Header row for pandas dataframe
+
+
+	rowindex = 0
+	
+	for row in reader:
+		#print(f'Parsing: {row}')
+		
+		if len(row) < 3:
+			rowindex+=1
+			continue
+			
+		if not headerfound:
+			if row[0] == 'Time':
+			
+				print(f'Row {rowindex} is header.')
 				
-	else:
-		filelist = [arg1]	#Single file
+				#Header row
+				headerfound = True
+				
+				header = row
+				
+				datacolumns = len(header)
+				print(f'Header: {header}')
+				print(f'{datacolumns} columns.')
+				
+			rowindex+=1
+			continue	#Ignore rows before first header line
+			
+		if row[0] == 'Time':	#Do not process header rows as data.
+			rowindex+=1
+			continue
+			
+		#print(f'Row {rowindex} is data.')
+		
+		date = None
+		try:
+			datestr = row[0]
+			hundreths = datestr[20:]
+			microseconds = int(hundreths)*10000
+			datestr = datestr[:20]
+			datestr += f'{microseconds:06d}'
+			date = datetime.datetime.strptime(datestr, "%Y-%m-%dT%H-%M-%S_%f")
+		except:
+			print("Couldn't parse timestamp:")
+			print(row[0])
+			rowindex+=1
+			continue
+			
+		if date < startdate:
+			rowindex+=1
+			continue
+			
+		if not enddate is None and date > enddate:
+			break
+			
+		#print(date)
+		
+		datarow = [date]
+		
+		for i in range(1, len(header)):
+			value = row[i]
+			
+			if value.isnumeric():
+				value = int(value)
+				
+			elif value == 'err':
+				value = None
+				
+			#print(f'Including elemnt {i} ({row[i]})')
+				
+			datarow.append(value)
+			
+		if not len(datarow) == datacolumns:
+			print(f'Data row invalid:')
+			print(datarow)
+			pass
+		
+		else:
+			data.append(datarow)
+			#print(f'Accepted row: {datarow}')
+			
+			
+	print(f'Loaded {len(data)} rows')
+		
+	rowindex+=1
+	return header, data
+
+
+def readdataarray():
+	global startdate
+	
+	datadir = 'data'
+	
+	if livestartdate:
+		startdate = datetime.datetime.now() - datetime.timedelta(minutes=2)
+	
+	startfile = startdate.strftime("%Y-%m-%dT%H.csv")
+	#startfile = startdate.strftime("%Y-%m-%dT%H-%M.csv")
+	print(f'First file is: {startfile}')
+
+	fileanddirlist = os.listdir(datadir)
+	fileanddirlist = [os.path.join(datadir, file) for file in fileanddirlist]	#Make the full relative path from the directory list
+	
+	filelist = []
+	for item in fileanddirlist:
+		if not os.path.isdir(item):
+			filelist.append(item)
 		
 		
 
@@ -251,15 +382,32 @@ while not stopflag:
 	plt.pause(.2)
 		
 	print(f'Draw!')
-		
 	lastdrawtime = time.time()
+	
+	
+	
+	
+	
+	esheader, esdata = readesdataarray()
+	
+	if esheader is None:
+		print(f'No ES header available!')
+		time.sleep(5)
+		continue
+		
+	esdf = pandas.DataFrame(esdata)
+	esdf.columns = esheader
+	
+	esdf.set_index('Time')
+	esdf.sort_values(by=['Time'])
+	
 	
 	
 		
 	header, data = readdataarray()
 	if header is None:
 		print(f'No header available!')
-		time.sleep(1)
+		time.sleep(5)
 		continue
 		
 	df = pandas.DataFrame(data)
@@ -299,6 +447,13 @@ while not stopflag:
 	fq3 = rollingaverage(df[f'1:12:Value']*1.8315-373.63, window)
 
 	pot = df[f'1:15:Value']/1024
+	
+	v1 = esdf[f'V1']*1000*1.9 + .02		#2024-04-30 Calibration with CC PSU
+	v2 = esdf[f'V2']*1000*1.97 + 2.48
+	v3 = esdf[f'V3']*1000*1.58 - .25
+	v4 = esdf[f'V4']*1000*1.29 + .03
+	v5 = esdf[f'V5']*1000*1.72 - .09
+	v6 = esdf[f'V6']*1000*1.54 + .09
 
 	#if 0:	#Draw fft?
 	#	# Number of samplepoints
