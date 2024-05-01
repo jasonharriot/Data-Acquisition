@@ -38,7 +38,7 @@ colors = ['black', 'blue', 'green', 'red', 'pink', 'orange', 'grey']
 
 
 
-numfields = len(fieldnames)
+#numfields = len(fieldnames)
 stopflag = False
 
 lastdrawtime = 0
@@ -70,12 +70,7 @@ def onpress(event):
 		
 
 def readesdataarray():	#Modified copy of readdataarray() which reads the ES data file
-	global startdate
-	
 	datadir = 'esdata'
-	
-	if livestartdate:
-		startdate = datetime.datetime.now() - datetime.timedelta(minutes=2)
 	
 	startfile = startdate.strftime("%Y-%m-%dT%H.csv")
 	#startfile = startdate.strftime("%Y-%m-%dT%H-%M.csv")
@@ -94,7 +89,7 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 	datastr = ''	#Holds all data
 	atstartfile = False
 	print(f'{len(filelist)} files available')
-	print(filelist)
+	#print(filelist)
 	
 	for file in filelist:
 		if startfile in file:	#If the file path to be loaded contains the start date
@@ -214,12 +209,7 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 
 
 def readdataarray():
-	global startdate
-	
 	datadir = 'data'
-	
-	if livestartdate:
-		startdate = datetime.datetime.now() - datetime.timedelta(minutes=2)
 	
 	startfile = startdate.strftime("%Y-%m-%dT%H.csv")
 	#startfile = startdate.strftime("%Y-%m-%dT%H-%M.csv")
@@ -247,6 +237,8 @@ def readdataarray():
 			
 		print(f'Loading: {file}')
 		datastr += open(file, 'r').read()
+		
+	print(f'Loaded {len(datastr)} characters')
 
 
 	data = []	#Array to hold all the data, in proper order. A dataframe will be made from this later on, but constructing the data as a simple array first is fastest.
@@ -374,12 +366,25 @@ def readdataarray():
 	return header, data
 
 def loop():
-	global stopflag
+	global stopflag, startdate
+	
+	if livestartdate:
+		startdate = datetime.datetime.now() - datetime.timedelta(minutes=0.5)
 	
 	print(f'Draw!')
 	lastdrawtime = time.time()
 	
-	startdate = datetime.datetime.now()-datetime.timedelta(minutes=10)
+	#Fix plot memory leak
+	#plt.cla()
+	#plt.draw()
+	#plt.pause(1)
+	
+	ax11.cla()
+	ax21.cla()
+	ax31.cla()
+	ax12.cla()
+	ax22.cla()
+	ax32.cla()
 	
 	esheader, esdata = readesdataarray()
 	
