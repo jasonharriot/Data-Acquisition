@@ -31,15 +31,20 @@ user_agent = r'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 authstring = base64.b64encode(f'{username}:{password}'.encode('ascii')).decode('utf-8')
 headers = {'Content-Type': 'application/x-www-form-urlencoded',
 	'Authorization': f'Basic {authstring}'}
-x = requests.get(url, headers=headers)
-
+	
 lastdatafilename = None
 
 def init():
-	if not x.status_code == 200:
-		print(f'You may need to set the password. Couldn\'t get a response from {ipaddress}.')
-		raise Exception(f'Bad response ({x.status_code})')
-		
+	global lastdatafilename
+	x = None
+	try:
+		x = requests.get(url, headers=headers)
+		lastdatafilename = None
+	except Exception as e:
+		if not x.status_code == 200:
+			print(f'You may need to set the password. Couldn\'t get a response from {ipaddress}.')
+		else:
+			print(f'Error making request to device')
 	try:
 		os.makedirs(f'{datadirectory}')
 	except FileExistsError:
