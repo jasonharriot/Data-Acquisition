@@ -19,15 +19,16 @@ matplotlib.use("QtAgg")	#This prevents the plot from grabbing focus from other w
 numsensors = 16
 fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
 
-decimation = 10
+decimation = 1
 
 livestartdate = True
+livedatewindow_min = 2	#How much data to show if life date is enabled. Minutes.
 startdate = datetime.datetime.strptime('2024-04-30T13-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
 
 #enddate = datetime.datetime.strptime('2024-03-04T15-00-00', "%Y-%m-%dT%H-%M-%S")
 enddate = None
 
-timelabelinterval = 2	#minutes
+timelabelinterval = 1	#Minutes, whole numbers only
 
 phase1='1-Base'
 phase2='2-Acid'
@@ -43,17 +44,20 @@ stopflag = False
 
 lastdrawtime = 0
 
+
 fig, ((ax11, ax12), (ax21, ax22), (ax31, ax32)) = plt.subplots(3, 2)
+
+
+bottomaxes = [ax31, ax32]
+nonbottomaxes = [ax11, ax12, ax21, ax22]
+allaxes = [ax11, ax12, ax21, ax22, ax31, ax32]
+
 axpressure = ax11
 axflow = ax21
 axtemp = ax31
 axcurrent = ax32
 axvoltage = ax22
 
-ax11.get_xaxis().set_visible(False)
-ax21.get_xaxis().set_visible(False)
-ax12.get_xaxis().set_visible(False)
-ax22.get_xaxis().set_visible(False)
 
 
 
@@ -369,7 +373,7 @@ def loop():
 	global stopflag, startdate
 	
 	if livestartdate:
-		startdate = datetime.datetime.now() - datetime.timedelta(minutes=0.5)
+		startdate = datetime.datetime.now() - datetime.timedelta(minutes=livedatewindow_min)
 	
 	print(f'Draw!')
 	lastdrawtime = time.time()
@@ -440,20 +444,37 @@ def loop():
 	pt5 = rollingaverage(df[f'1:10:Value']*.061050-12.45, window)
 	pt6 = rollingaverage(df[f'1:11:Value']*.061050-12.45, window)
 
-	fq1 = rollingaverage(df[f'1:14:Value']*1.8315-373.63, window)
+	fq1 = rollingaverage(df[f'1:14:Value']*1.8315-373.63, window)	#0-1500 mL/min from prior to 2024-05-09
 	fq2 = rollingaverage(df[f'1:13:Value']*1.8315-373.63, window)
 	fq3 = rollingaverage(df[f'1:12:Value']*1.8315-373.63, window)
+	
+	fq1 = rollingaverage(df[f'1:14:Value']*3.663-747.3, window)	#0-3000 mL/min
+	fq2 = rollingaverage(df[f'1:13:Value']*3.663-747.3, window)
+	fq3 = rollingaverage(df[f'1:12:Value']*3.663-747.3, window)
 
 	pot = df[f'1:15:Value']/1024
 	
-	v1 = esdf[f'V1']*1000*.53-.01		#2024-04-30 Calibration with CC PSU
-	v2 = esdf[f'V2']*1000*.5-1.13
-	v3 = esdf[f'V3']*1000*.63+.16
-	v4 = esdf[f'V4']*1000*.77-.02
-	v5 = esdf[f'V5']*1000*.58+.05
-	v6 = esdf[f'V6']*1000*.65-.06
+	#v1 = esdf[f'V1']*1000*.53-.01		#2024-04-30 Calibration with CC PSU
+	#v2 = esdf[f'V2']*1000*.5-1.13
+	#v3 = esdf[f'V3']*1000*.63+.16
+	#v4 = esdf[f'V4']*1000*.77-.02
+	#v5 = esdf[f'V5']*1000*.58+.05
+	#v6 = esdf[f'V6']*1000*.65-.06
+	
+	v1 = esdf[f'V1']*-1489.96952515665		#2024-05-09 BAC testing
+	v2 = esdf[f'V2']*-1489.96952515665
+	v3 = esdf[f'V3']*-1489.96952515665
+	v4 = esdf[f'V4']*-1489.96952515665
+	v5 = esdf[f'V5']*-1489.96952515665
+	v6 = esdf[f'V6']*-1489.96952515665
 
 
+	
+	
+	
+	
+	
+	
 	
 	axpressure.set_title('')
 	axpressure.set_ylabel(r'Guage Pressure ($Lb-in^{-2}$)')
@@ -469,7 +490,7 @@ def loop():
 	axpressure.plot(df['Time'], pt5, linewidth=1, markersize=0, color=colors[4], linestyle=(0, (2, 10)))
 	axpressure.plot(df['Time'], pt6, linewidth=1, markersize=0, color=colors[5], linestyle=(0, (2, 10)))
 
-	axpressure.legend([f'{phase1} pre', f'{phase2} pre', f'{phase3} pre', f'{phase1} post', f'{phase2} post', f'{phase3} post'])
+	axpressure.legend([f'{phase1} pre', f'{phase2} pre', f'{phase3} pre', f'{phase1} post', f'{phase2} post', f'{phase3} post'], loc='upper left')
 
 	#ax12 = axpressure.twinx()
 	#ax12.set_ylabel(r'Pump speed')
@@ -494,7 +515,7 @@ def loop():
 
 	
 	axflow.set_title('')
-	axflow.set_ylim([-100, 1500])
+	axflow.set_ylim([-100, 3100])
 	axflow.set_ylabel(r'Flow ($mL-min^{-1}$)')
 	axflow.set_xlabel('Time')
 	axflow.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axflow.xaxis.get_major_locator()))
@@ -504,7 +525,7 @@ def loop():
 	axflow.plot(df['Time'], fq2, linewidth=1, markersize=0, color=colors[1])
 	axflow.plot(df['Time'], fq3, linewidth=1, markersize=0, color=colors[2])
 
-	axflow.legend([f'{phase1}', f'{phase2}', f'{phase3}'])
+	axflow.legend([f'{phase1}', f'{phase2}', f'{phase3}'], loc='upper left')
 
 	
 	
@@ -521,12 +542,12 @@ def loop():
 	axtemp.plot(df['Time'], rtd3, linewidth=1, markersize=0, color=colors[2])
 	axtemp.plot(df['Time'], rtd4, linewidth=1, markersize=0, color=colors[3])
 
-	axtemp.legend([f'{phase1}', f'{phase2}', f'{phase3}', f'Brine Supply'])
+	axtemp.legend([f'{phase1}', f'{phase2}', f'{phase3}', f'Brine Supply'], loc='upper left')
 
 
 	axcurrent.set_title('')
 	axcurrent.set_ylabel(r'Current ($A$)')
-	axcurrent.set_ylim([0, 40])
+	axcurrent.set_ylim([-5, 40])
 	axcurrent.set_xlabel('Time')
 	axcurrent.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axcurrent.xaxis.get_major_locator()))
 	axcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
@@ -537,10 +558,21 @@ def loop():
 	for i in range(0, len(channels)):
 		axcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
 
-	axcurrent.legend(names)
+	axcurrent.legend(names, loc='upper left')
+	
+	
+	
+	
+	
+	
+	fig.tight_layout()
 
-
-
+	#Turn on minor gridlines for the plots
+	for a in allaxes:
+		a.grid(True)
+		a.grid(which='minor', color='grey', linestyle=':')
+		a.minorticks_on()
+	
 	plt.draw()
 
 if __name__ == '__main__':
@@ -550,7 +582,7 @@ if __name__ == '__main__':
 	while not stopflag and plt.fignum_exists(fig.number):
 		try:
 			loop()
-			plt.pause(.2)
+			plt.pause(.1)
 			
 		except Exception as e:
 			print(f'Error running plotter. Auto retry...')

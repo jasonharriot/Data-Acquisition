@@ -110,7 +110,7 @@ if __name__ == '__main__':
 	while 1:	#Main loop
 		try:
 			loop()
-			time.sleep(.1)
+			time.sleep(.01)
 		except Exception as e:
 			print(f'Error running CSV logger script. Check connections. Auto retry...')
 			print(e)
