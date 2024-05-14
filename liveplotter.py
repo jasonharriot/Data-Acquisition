@@ -22,7 +22,7 @@ fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
 decimation = 1
 
 livestartdate = True
-livedatewindow_min = 2	#How much data to show if life date is enabled. Minutes.
+livedatewindow_min = 5	#How much data to show if life date is enabled. Minutes.
 startdate = datetime.datetime.strptime('2024-04-30T13-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
 
 #enddate = datetime.datetime.strptime('2024-03-04T15-00-00', "%Y-%m-%dT%H-%M-%S")
@@ -95,6 +95,16 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 	print(f'{len(filelist)} files available')
 	#print(filelist)
 	
+	#filequerylist = []
+	#querydate = startdate
+
+	#while(querydate < enddate):
+	#	filequerylist.append(querydate.strftime("%Y-%m-%dT%H.csv"))
+	#	querydate = querydate + datetime.timedelta(hours=1)
+
+	#print(f'{len(filequerylist)} files of interest:')
+	#print(filequerylist)
+	
 	for file in filelist:
 		if startfile in file:	#If the file path to be loaded contains the start date
 			atstartfile = True
@@ -102,6 +112,7 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 		if not atstartfile:
 			continue
 			
+		#if file in filequerylist:	
 		print(f'Loading: {file}')
 		datastr += open(file, 'r').read()
 		
@@ -444,9 +455,9 @@ def loop():
 	pt5 = rollingaverage(df[f'1:10:Value']*.061050-12.45, window)
 	pt6 = rollingaverage(df[f'1:11:Value']*.061050-12.45, window)
 
-	fq1 = rollingaverage(df[f'1:14:Value']*1.8315-373.63, window)	#0-1500 mL/min from prior to 2024-05-09
-	fq2 = rollingaverage(df[f'1:13:Value']*1.8315-373.63, window)
-	fq3 = rollingaverage(df[f'1:12:Value']*1.8315-373.63, window)
+	#fq1 = rollingaverage(df[f'1:14:Value']*1.8315-373.63, window)	#0-1500 mL/min from prior to 2024-05-09
+	#fq2 = rollingaverage(df[f'1:13:Value']*1.8315-373.63, window)
+	#fq3 = rollingaverage(df[f'1:12:Value']*1.8315-373.63, window)
 	
 	fq1 = rollingaverage(df[f'1:14:Value']*3.663-747.3, window)	#0-3000 mL/min
 	fq2 = rollingaverage(df[f'1:13:Value']*3.663-747.3, window)
@@ -490,7 +501,14 @@ def loop():
 	axpressure.plot(df['Time'], pt5, linewidth=1, markersize=0, color=colors[4], linestyle=(0, (2, 10)))
 	axpressure.plot(df['Time'], pt6, linewidth=1, markersize=0, color=colors[5], linestyle=(0, (2, 10)))
 
-	axpressure.legend([f'{phase1} pre', f'{phase2} pre', f'{phase3} pre', f'{phase1} post', f'{phase2} post', f'{phase3} post'], loc='upper left')
+	ptv1 = pt1[len(pt1)-1]
+	ptv2 = pt2[len(pt2)-1]
+	ptv3 = pt3[len(pt3)-1]
+	ptv4 = pt4[len(pt4)-1]
+	ptv5 = pt5[len(pt5)-1]
+	ptv6 = pt6[len(pt6)-1]
+
+	axpressure.legend([f'{phase1} pre {ptv1:.1f}', f'{phase2} pre {ptv2:.1f}', f'{phase3} pre {ptv3:.1f}', f'{phase1} post {ptv4:.1f}', f'{phase2} post {ptv5:.1f}', f'{phase3} post {ptv6:.1f}'], loc='upper left')
 
 	#ax12 = axpressure.twinx()
 	#ax12.set_ylabel(r'Pump speed')
@@ -525,7 +543,7 @@ def loop():
 	axflow.plot(df['Time'], fq2, linewidth=1, markersize=0, color=colors[1])
 	axflow.plot(df['Time'], fq3, linewidth=1, markersize=0, color=colors[2])
 
-	axflow.legend([f'{phase1}', f'{phase2}', f'{phase3}'], loc='upper left')
+	axflow.legend([f'{phase1} {fq1[-1]:.0f}', f'{phase2} {fq2[-1]:.0f}', f'{phase3} {fq3[-1]:.0f}'], loc='upper left')
 
 	
 	
@@ -542,7 +560,7 @@ def loop():
 	axtemp.plot(df['Time'], rtd3, linewidth=1, markersize=0, color=colors[2])
 	axtemp.plot(df['Time'], rtd4, linewidth=1, markersize=0, color=colors[3])
 
-	axtemp.legend([f'{phase1}', f'{phase2}', f'{phase3}', f'Brine Supply'], loc='upper left')
+	axtemp.legend([f'{phase1} {rtd1[-1]:.1f}', f'{phase2} {rtd2[-1]:.1f}', f'{phase3} {rtd3[-1]:.1f}', f'Brine Supply {rtd4[-1]:.1f}'], loc='upper left')
 
 
 	axcurrent.set_title('')
@@ -553,7 +571,7 @@ def loop():
 	axcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 	
 	channels = [v1, v2, v3, v4, v5, v6]
-	names = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+	names = [f'V1 {v1[len(v1)-1]:.1f}', f'V2 {v2[len(v2)-1]:.1f}', f'V3 {v3[len(v3)-1]:.1f}', f'V4 {v4[len(v4)-1]:.1f}', f'V5 {v5[len(v5)-1]:.1f}', f'V6 {v6[len(v6)-1]:.1f}']
 
 	for i in range(0, len(channels)):
 		axcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
