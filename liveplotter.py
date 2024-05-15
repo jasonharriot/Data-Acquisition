@@ -22,13 +22,13 @@ fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
 decimation = 1
 
 livestartdate = True
-livedatewindow_min = 5	#How much data to show if life date is enabled. Minutes.
+livedatewindow_min = 60	#How much data to show if life date is enabled. Minutes.
 startdate = datetime.datetime.strptime('2024-04-30T13-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
 
 #enddate = datetime.datetime.strptime('2024-03-04T15-00-00', "%Y-%m-%dT%H-%M-%S")
-enddate = None
+#enddate = None	#
 
-timelabelinterval = 1	#Minutes, whole numbers only
+timelabelinterval = 10	#Minutes, whole numbers only
 
 phase1='1-Base'
 phase2='2-Acid'
@@ -56,14 +56,40 @@ axpressure = ax11
 axflow = ax21
 axtemp = ax31
 axcurrent = ax32
-axvoltage = ax22
+axdiffcurrent = ax22
 
 
 
 
 def rollingaverage(a, window):
-	ret = np.convolve(a, np.ones(window), 'same')/window	#Apply rolling average. Mode handles edge condition. Divide by window.
+	#values = []
+	#for i in range(0, len(a)):
+	#	startindex = max(0, i-int(window/2))
+	#	stopindex = min(len(a)-1, i+int(window/2))
+	#	dist = (stopindex-startindex) + 1
+		
+	#	valuesum = 0
+	#	for i in range(startindex, stopindex):
+	#		valuesum += a[i]
+			
+	#	if dist > window/2:
+	#		value = valuesum / dist
+	#	else:
+	#		value = a[i]
+	#	
+	#	values.append(value)
+	
+	
+	#return np.rolling(a, window)
+	
+	
+	ret = np.convolve(a, np.ones(window), 'valid')/window	#Apply rolling average. Mode handles edge condition. Divide by window.
+	while len(ret) < len(a):
+		ret = np.append(ret, 0)
+		
 	return ret
+	
+	#return values
 
 
 def onpress(event):
@@ -76,9 +102,9 @@ def onpress(event):
 def readesdataarray():	#Modified copy of readdataarray() which reads the ES data file
 	datadir = 'esdata'
 	
-	startfile = startdate.strftime("%Y-%m-%dT%H.csv")
+	#startfile = startdate.strftime("%Y-%m-%dT%H.csv")
 	#startfile = startdate.strftime("%Y-%m-%dT%H-%M.csv")
-	print(f'First file is: {startfile}')
+	#print(f'First file is: {startfile}')
 
 	fileanddirlist = os.listdir(datadir)
 	fileanddirlist = [os.path.join(datadir, file) for file in fileanddirlist]	#Make the full relative path from the directory list
@@ -95,26 +121,29 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 	print(f'{len(filelist)} files available')
 	#print(filelist)
 	
-	#filequerylist = []
-	#querydate = startdate
+	filequerylist = []
+	querydate = startdate
 
-	#while(querydate < enddate):
-	#	filequerylist.append(querydate.strftime("%Y-%m-%dT%H.csv"))
-	#	querydate = querydate + datetime.timedelta(hours=1)
+	while(querydate < datetime.datetime.now()):
+		filequerylist.append(querydate.strftime(os.path.join(datadir, "%Y-%m-%dT%H.csv")))
+		querydate = querydate + datetime.timedelta(hours=1)	#Files are named by the hour. Get the next file. TODO: is this safe? What is the precision of 1-hour increments over time?
 
 	#print(f'{len(filequerylist)} files of interest:')
 	#print(filequerylist)
 	
-	for file in filelist:
-		if startfile in file:	#If the file path to be loaded contains the start date
-			atstartfile = True
+	
+	
+	
+	for file in filelist:	#Iterate through files which DO appear in the data directory
+		#if startfile in file:	#If the file path to be loaded contains the start date
+		#	atstartfile = True
 			
-		if not atstartfile:
-			continue
+		#if not atstartfile:
+		#	continue
 			
-		#if file in filequerylist:	
-		print(f'Loading: {file}')
-		datastr += open(file, 'r').read()
+		if file in filequerylist:	#If this file is also in the list of possible files which we would want to load
+			print(f'Loading: {file}')
+			datastr += open(file, 'r').read()
 		
 	print(f'Loaded {len(datastr)} characters')
 
@@ -145,7 +174,7 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 		if not headerfound:
 			if row[0] == 'Time':
 			
-				print(f'Row {rowindex} is header.')
+				#print(f'Row {rowindex} is header.')
 				
 				#Header row
 				headerfound = True
@@ -153,8 +182,8 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 				header = row
 				
 				datacolumns = len(header)
-				print(f'Header: {header}')
-				print(f'{datacolumns} columns.')
+				#print(f'Header: {header}')
+				#print(f'{datacolumns} columns.')
 				
 			rowindex+=1
 			continue	#Ignore rows before first header line
@@ -186,9 +215,6 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 		if date < startdate:
 			rowindex+=1
 			continue
-			
-		if not enddate is None and date > enddate:
-			break
 			
 		#print(date)
 		
@@ -226,9 +252,9 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 def readdataarray():
 	datadir = 'data'
 	
-	startfile = startdate.strftime("%Y-%m-%dT%H.csv")
+	#startfile = startdate.strftime("%Y-%m-%dT%H.csv")
 	#startfile = startdate.strftime("%Y-%m-%dT%H-%M.csv")
-	print(f'First file is: {startfile}')
+	#print(f'First file is: {startfile}')
 
 	fileanddirlist = os.listdir(datadir)
 	fileanddirlist = [os.path.join(datadir, file) for file in fileanddirlist]	#Make the full relative path from the directory list
@@ -237,21 +263,35 @@ def readdataarray():
 	for item in fileanddirlist:
 		if not os.path.isdir(item):
 			filelist.append(item)
+			
+	filequerylist = []
+	querydate = startdate
+			
+	while(querydate < datetime.datetime.now()):
+		filequerylist.append(querydate.strftime(os.path.join(datadir, "%Y-%m-%dT%H.csv")))
+		querydate = querydate + datetime.timedelta(hours=1)	#Files are named by the hour. Get the next file. TODO: is this safe? What is the precision of 1-hour increments over time?
+
+	#print(f'{len(filequerylist)} files of interest:')
+	#print(filequerylist)
+	
+	
+	datastr = ''	#Holds all data
+	print(f'{len(filelist)} files available')
+	
+	for file in filelist:	#Iterate through files which DO appear in the data directory
+		#if startfile in file:	#If the file path to be loaded contains the start date
+		#	atstartfile = True
+			
+		#if not atstartfile:
+		#	continue
+			
+		if file in filequerylist:	#If this file is also in the list of possible files which we would want to load
+			print(f'Loading: {file}')
+			datastr += open(file, 'r').read()
 		
 		
 
-	datastr = ''	#Holds all data
-	atstartfile = False
-	print(f'{len(filelist)} files available')
-	for file in filelist:
-		if startfile in file:	#If the file path to be loaded contains the start date
-			atstartfile = True
-			
-		if not atstartfile:
-			continue
-			
-		print(f'Loading: {file}')
-		datastr += open(file, 'r').read()
+	
 		
 	print(f'Loaded {len(datastr)} characters')
 
@@ -282,7 +322,7 @@ def readdataarray():
 		if not headerfound:
 			if row[1] == 'HEADER':
 			
-				print(f'Header found at {rowindex}')
+				#print(f'Header found at {rowindex}')
 				
 				#Header row
 				headerfound = True
@@ -301,8 +341,8 @@ def readdataarray():
 					header.append(f'{nodeid}:{sensorid}:{fieldname}')
 				
 				datacolumns = len(header)
-				print(f'Header: {header}')
-				print(f'{datacolumns} columns.')
+				#print(f'Header: {header}')
+				#print(f'{datacolumns} columns.')
 				
 			rowindex+=1
 			continue	#Ignore rows before first header line
@@ -337,9 +377,6 @@ def readdataarray():
 		if date < startdate:
 			rowindex+=1
 			continue
-			
-		if not enddate is None and date > enddate:
-			break
 			
 		#print(date)
 		
@@ -380,13 +417,14 @@ def readdataarray():
 	rowindex+=1
 	return header, data
 
+
 def loop():
 	global stopflag, startdate
 	
 	if livestartdate:
 		startdate = datetime.datetime.now() - datetime.timedelta(minutes=livedatewindow_min)
 	
-	print(f'Draw!')
+	#print(f'Draw!')
 	lastdrawtime = time.time()
 	
 	#Fix plot memory leak
@@ -472,17 +510,32 @@ def loop():
 	#v5 = esdf[f'V5']*1000*.58+.05
 	#v6 = esdf[f'V6']*1000*.65-.06
 	
-	v1 = esdf[f'V1']*-1489.96952515665		#2024-05-09 BAC testing
-	v2 = esdf[f'V2']*-1489.96952515665
-	v3 = esdf[f'V3']*-1489.96952515665
-	v4 = esdf[f'V4']*-1489.96952515665
-	v5 = esdf[f'V5']*-1489.96952515665
-	v6 = esdf[f'V6']*-1489.96952515665
+	i1 = esdf[f'V1']*-1489.96952515665		#2024-05-09 BAC testing
+	i2 = esdf[f'V2']*-1489.96952515665
+	i3 = esdf[f'V3']*-1489.96952515665
+	i4 = esdf[f'V4']*-1489.96952515665
+	i5 = esdf[f'V5']*-1489.96952515665
+	i6 = esdf[f'V6']*-1489.96952515665
 
 
+	#tempdf = esdf[['Time', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']]
+	#didf = tempdf.diff()
 	
+	#print(esdf)
+	diffcurrentaveragewindow = 1000
+	di1 = np.gradient(esdf['V1'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
+	di2 = np.gradient(esdf['V2'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
+	di3 = np.gradient(esdf['V3'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
+	di4 = np.gradient(esdf['V4'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
+	di5 = np.gradient(esdf['V5'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
+	di6 = np.gradient(esdf['V6'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
 	
-	
+	di1 = rollingaverage(di1, diffcurrentaveragewindow)
+	di2 = rollingaverage(di2, diffcurrentaveragewindow)
+	di3 = rollingaverage(di3, diffcurrentaveragewindow)
+	di4 = rollingaverage(di4, diffcurrentaveragewindow)
+	di5 = rollingaverage(di5, diffcurrentaveragewindow)
+	di6 = rollingaverage(di6, diffcurrentaveragewindow)
 	
 	
 	
@@ -490,7 +543,7 @@ def loop():
 	axpressure.set_title('')
 	axpressure.set_ylabel(r'Guage Pressure ($Lb-in^{-2}$)')
 	axpressure.set_xlabel('Time')
-	axpressure.set_ylim([-5, 30])
+	axpressure.set_ylim([-10, 30])
 	axpressure.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axpressure.xaxis.get_major_locator()))
 	axpressure.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 
@@ -533,7 +586,7 @@ def loop():
 
 	
 	axflow.set_title('')
-	axflow.set_ylim([-100, 3100])
+	axflow.set_ylim([0, 3100])
 	axflow.set_ylabel(r'Flow ($mL-min^{-1}$)')
 	axflow.set_xlabel('Time')
 	axflow.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axflow.xaxis.get_major_locator()))
@@ -565,13 +618,13 @@ def loop():
 
 	axcurrent.set_title('')
 	axcurrent.set_ylabel(r'Current ($A$)')
-	axcurrent.set_ylim([-5, 40])
+	axcurrent.set_ylim([0, 25])
 	axcurrent.set_xlabel('Time')
 	axcurrent.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axcurrent.xaxis.get_major_locator()))
 	axcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 	
-	channels = [v1, v2, v3, v4, v5, v6]
-	names = [f'V1 {v1[len(v1)-1]:.1f}', f'V2 {v2[len(v2)-1]:.1f}', f'V3 {v3[len(v3)-1]:.1f}', f'V4 {v4[len(v4)-1]:.1f}', f'V5 {v5[len(v5)-1]:.1f}', f'V6 {v6[len(v6)-1]:.1f}']
+	channels = [i1, i2, i3, i4, i5, i6]
+	names = [f'I1 {i1[len(i1)-1]:.1f}', f'I2 {i2[len(i2)-1]:.1f}', f'I3 {i3[len(i3)-1]:.1f}', f'I4 {i4[len(i4)-1]:.1f}', f'I5 {i5[len(i5)-1]:.1f}', f'I6 {i6[len(i6)-1]:.1f}']
 
 	for i in range(0, len(channels)):
 		axcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
@@ -580,6 +633,38 @@ def loop():
 	
 	
 	
+	
+	axdiffcurrent.set_title('')
+	axdiffcurrent.set_ylabel(r'$dI/dt (mA-hr^{-1})$')
+	#axdiffcurrent.set_ylim([-1, 1])
+	axdiffcurrent.set_xlabel('Time')
+	axdiffcurrent.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axcurrent.xaxis.get_major_locator()))
+	axdiffcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
+	
+	channels = [di1, di2, di3, di4, di5, di6]
+	#channels = [di1]
+	#names = [f'dI1 {di1[len(di1)-1]:.1f}', f'dI2 {di2[len(di2)-1]:.1f}', f'dI3 {di3[len(di3)-1]:.1f}', f'dI4 {di4[len(di4)-1]:.1f}', f'dI5 {di5[len(di5)-1]:.1f}', f'dI6 {di6[len(di6)-1]:.1f}']
+	names = []
+	
+	#croppedtime = esdf['Time']
+	#sizedifference = len(esdf['Time']) - len(di1)
+	#before = np.ceil(sizedifference/2)
+	#after = np.floor(sizedifference/2)
+	
+	#croppedtime = croppedtime[before:-after]
+	
+	#print(f'Cropped time: {len(croppedtime)}')
+	#print(f'Diff current: {len(di1)}')
+	
+	
+	for i in range(0, len(channels)):
+		names.append(f'dI{i} {np.mean(channels[i]):.2f}')
+		
+	for i in range(0, len(channels)):
+		
+		axdiffcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
+
+	axdiffcurrent.legend(names, loc='upper left')
 	
 	
 	
@@ -599,6 +684,7 @@ if __name__ == '__main__':
 
 	while not stopflag and plt.fignum_exists(fig.number):
 		try:
+			print(f'======== Draw! ========')
 			loop()
 			plt.pause(.1)
 			
