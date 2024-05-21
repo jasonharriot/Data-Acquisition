@@ -22,13 +22,13 @@ fieldnames = ['Node ID', 'Sensor ID', 'Type', 'Value']
 decimation = 1
 
 livestartdate = True
-livedatewindow_min = 60	#How much data to show if life date is enabled. Minutes.
+livedatewindow_min = 30	#How much data to show if life date is enabled. Minutes.
 startdate = datetime.datetime.strptime('2024-04-30T13-00-00', "%Y-%m-%dT%H-%M-%S")	#Data with timestamp prior to this will be ignored. Set to experiment start time.
 
 #enddate = datetime.datetime.strptime('2024-03-04T15-00-00', "%Y-%m-%dT%H-%M-%S")
 #enddate = None	#
 
-timelabelinterval = 10	#Minutes, whole numbers only
+timelabelinterval = 5	#Minutes, whole numbers only
 
 phase1='1-Base'
 phase2='2-Acid'
@@ -62,34 +62,44 @@ axdiffcurrent = ax22
 
 
 def rollingaverage(a, window):
-	#values = []
-	#for i in range(0, len(a)):
-	#	startindex = max(0, i-int(window/2))
-	#	stopindex = min(len(a)-1, i+int(window/2))
-	#	dist = (stopindex-startindex) + 1
+	values = []
+	
+	for i in range(0, len(a)):
+		startindex = max(0, i-int(window))
+		stopindex = min(len(a)-1, i+int(window))
 		
-	#	valuesum = 0
-	#	for i in range(startindex, stopindex):
-	#		valuesum += a[i]
+		assert stopindex >= startindex
+		
+		dist = (stopindex-startindex) + 1
+		
+		assert dist >= 1
+		
+		#sys.stdout.write(f'{i}: ')
+		
+		valuesum = 0
+		for i in range(startindex, stopindex+1):
+			valuesum += a[i]
 			
-	#	if dist > window/2:
-	#		value = valuesum / dist
-	#	else:
-	#		value = a[i]
-	#	
-	#	values.append(value)
-	
-	
-	#return np.rolling(a, window)
-	
-	
-	ret = np.convolve(a, np.ones(window), 'valid')/window	#Apply rolling average. Mode handles edge condition. Divide by window.
-	while len(ret) < len(a):
-		ret = np.append(ret, 0)
+			#sys.stdout.write(f'{a[i]}, ')
+			
+		#if dist > window/2:
+		value = valuesum / dist
+		#else:
+		#	value = a[i]
 		
-	return ret
+		values.append(value)
+		
+		#print()
 	
-	#return values
+	
+	return values
+	
+	#ret = np.convolve(a, np.ones(window), 'valid')/window	#Apply rolling average. Mode handles edge condition. Divide by window.
+	#while len(ret) < len(a):
+	#	ret = np.append(ret, 0)
+	#return ret
+	
+	
 
 
 def onpress(event):
@@ -124,7 +134,7 @@ def readesdataarray():	#Modified copy of readdataarray() which reads the ES data
 	filequerylist = []
 	querydate = startdate
 
-	while(querydate < datetime.datetime.now()):
+	while(querydate < datetime.datetime.now() + datetime.timedelta(hours=1)):
 		filequerylist.append(querydate.strftime(os.path.join(datadir, "%Y-%m-%dT%H.csv")))
 		querydate = querydate + datetime.timedelta(hours=1)	#Files are named by the hour. Get the next file. TODO: is this safe? What is the precision of 1-hour increments over time?
 
@@ -267,7 +277,7 @@ def readdataarray():
 	filequerylist = []
 	querydate = startdate
 			
-	while(querydate < datetime.datetime.now()):
+	while(querydate < datetime.datetime.now() + datetime.timedelta(hours=1)):	#We want files from the past up until 1 hour from now (the "current" hour's file)
 		filequerylist.append(querydate.strftime(os.path.join(datadir, "%Y-%m-%dT%H.csv")))
 		querydate = querydate + datetime.timedelta(hours=1)	#Files are named by the hour. Get the next file. TODO: is this safe? What is the precision of 1-hour increments over time?
 
@@ -476,30 +486,28 @@ def loop():
 
 
 
-	window = 1
 
-
-	rtd1 = rollingaverage(df['1:0:Value']*.1221-24.908, window)
-	rtd2 = rollingaverage(df['1:1:Value']*.1221-24.908, window)
-	rtd3 = rollingaverage(df['1:2:Value']*.1221-24.908, window)
-	rtd4 = rollingaverage(df['1:3:Value']*.1221-24.908, window)
+	rtd1 = df['1:0:Value']*.1221-24.908
+	rtd2 = df['1:1:Value']*.1221-24.908
+	rtd3 = df['1:2:Value']*.1221-24.908
+	rtd4 = df['1:3:Value']*.1221-24.908
 	
 	#rtd1d = derriva
 
-	pt1 = rollingaverage(df[f'1:6:Value']*.061050-12.45, window)
-	pt2 = rollingaverage(df[f'1:7:Value']*.061050-12.45, window)
-	pt3 = rollingaverage(df[f'1:8:Value']*.061050-12.45, window)
-	pt4 = rollingaverage(df[f'1:9:Value']*.061050-12.45, window)
-	pt5 = rollingaverage(df[f'1:10:Value']*.061050-12.45, window)
-	pt6 = rollingaverage(df[f'1:11:Value']*.061050-12.45, window)
+	pt1 = df[f'1:6:Value']*.061050-12.45
+	pt2 = df[f'1:7:Value']*.061050-12.45
+	pt3 = df[f'1:8:Value']*.061050-12.45
+	pt4 = df[f'1:9:Value']*.061050-12.45
+	pt5 = df[f'1:10:Value']*.061050-12.45
+	pt6 = df[f'1:11:Value']*.061050-12.45
 
 	#fq1 = rollingaverage(df[f'1:14:Value']*1.8315-373.63, window)	#0-1500 mL/min from prior to 2024-05-09
 	#fq2 = rollingaverage(df[f'1:13:Value']*1.8315-373.63, window)
 	#fq3 = rollingaverage(df[f'1:12:Value']*1.8315-373.63, window)
 	
-	fq1 = rollingaverage(df[f'1:14:Value']*3.663-747.3, window)	#0-3000 mL/min
-	fq2 = rollingaverage(df[f'1:13:Value']*3.663-747.3, window)
-	fq3 = rollingaverage(df[f'1:12:Value']*3.663-747.3, window)
+	fq1 = df[f'1:14:Value']*3.663-747.3	#0-3000 mL/min
+	fq2 = df[f'1:13:Value']*3.663-747.3
+	fq3 = df[f'1:12:Value']*3.663-747.3
 
 	pot = df[f'1:15:Value']/1024
 	
@@ -522,20 +530,31 @@ def loop():
 	#didf = tempdf.diff()
 	
 	#print(esdf)
-	diffcurrentaveragewindow = 1000
-	di1 = np.gradient(esdf['V1'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
-	di2 = np.gradient(esdf['V2'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
-	di3 = np.gradient(esdf['V3'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
-	di4 = np.gradient(esdf['V4'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
-	di5 = np.gradient(esdf['V5'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
-	di6 = np.gradient(esdf['V6'].values, esdf['Time'].astype('int64').values / (1e9*60*60))
+	diffcurrentaveragewindow = 50
+	averaged1 = rollingaverage(esdf['V1'].values, diffcurrentaveragewindow)
+	averaged2 = rollingaverage(esdf['V2'].values, diffcurrentaveragewindow)
+	averaged3 = rollingaverage(esdf['V3'].values, diffcurrentaveragewindow)
+	averaged4 = rollingaverage(esdf['V4'].values, diffcurrentaveragewindow)
+	averaged5 = rollingaverage(esdf['V5'].values, diffcurrentaveragewindow)
+	averaged6 = rollingaverage(esdf['V6'].values, diffcurrentaveragewindow)
 	
-	di1 = rollingaverage(di1, diffcurrentaveragewindow)
-	di2 = rollingaverage(di2, diffcurrentaveragewindow)
-	di3 = rollingaverage(di3, diffcurrentaveragewindow)
-	di4 = rollingaverage(di4, diffcurrentaveragewindow)
-	di5 = rollingaverage(di5, diffcurrentaveragewindow)
-	di6 = rollingaverage(di6, diffcurrentaveragewindow)
+	#di1 = -np.gradient(averaged1, esdf['Time'].astype('int64').values) * (1e9)
+	di_time = esdf['Time'].astype('datetime64[ms]').astype('int64').values	#Convert to a seconds-based datetime, then to plain int
+	#di_time_delta = di_time[1] - di_time[0]
+	print(di_time[1] - di_time[0])
+	
+	#print(f'Time delta is {di_time_delta}')
+	
+	#Derivatives. Gradient returns units of A-ms^-1
+	#Convert to mA-s^-1
+	di1 = 1e3 * 1e3 * -np.gradient(averaged1, di_time)
+	di2 = 1e3 * 1e3 * -np.gradient(averaged2, di_time)
+	di3 = 1e3 * 1e3 * -np.gradient(averaged3, di_time)
+	di4 = 1e3 * 1e3 * -np.gradient(averaged4, di_time)
+	di5 = 1e3 * 1e3 * -np.gradient(averaged5, di_time)
+	di6 = 1e3 * 1e3 * -np.gradient(averaged6, di_time)
+
+	#print(np.shape(di1))
 	
 	
 	
@@ -595,9 +614,22 @@ def loop():
 	axflow.plot(df['Time'], fq1, linewidth=1, markersize=0, color=colors[0])
 	axflow.plot(df['Time'], fq2, linewidth=1, markersize=0, color=colors[1])
 	axflow.plot(df['Time'], fq3, linewidth=1, markersize=0, color=colors[2])
-
-	axflow.legend([f'{phase1} {fq1[-1]:.0f}', f'{phase2} {fq2[-1]:.0f}', f'{phase3} {fq3[-1]:.0f}'], loc='upper left')
-
+	
+	channels = [fq1, fq2, fq3]
+	phasenames = [phase1, phase2, phase3]
+	names = []
+	for i in range(0, len(channels)):
+		ch = channels[i]
+		names.append(f'{phasenames[i]} {ch[len(ch)-1]:.0f}')
+	#axflow.legend([f'{phase1} {fq1[-1]:.0f}', f'{phase2} {fq2[-1]:.0f}', f'{phase3} {fq3[-1]:.0f}'], loc='upper left')
+	axflow.legend(names, loc='upper left')
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -613,7 +645,29 @@ def loop():
 	axtemp.plot(df['Time'], rtd3, linewidth=1, markersize=0, color=colors[2])
 	axtemp.plot(df['Time'], rtd4, linewidth=1, markersize=0, color=colors[3])
 
-	axtemp.legend([f'{phase1} {rtd1[-1]:.1f}', f'{phase2} {rtd2[-1]:.1f}', f'{phase3} {rtd3[-1]:.1f}', f'Brine Supply {rtd4[-1]:.1f}'], loc='upper left')
+	channels = [rtd1, rtd2, rtd3, rtd4]
+	phasenames = [phase1, phase2, phase3, 'Brine Supply']
+	names = []
+	for i in range(0, len(channels)):
+		ch = channels[i]
+		names.append(f'{phasenames[i]} {ch[len(ch)-1]:.0f}')
+	#axtemp.legend([f'{phase1} {rtd1[-1]:.1f}', f'{phase2} {rtd2[-1]:.1f}', f'{phase3} {rtd3[-1]:.1f}', f'Brine Supply {rtd4[-1]:.1f}'], loc='upper left')
+	axtemp.legend(names, loc='upper left')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 	axcurrent.set_title('')
@@ -624,8 +678,11 @@ def loop():
 	axcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
 	
 	channels = [i1, i2, i3, i4, i5, i6]
-	names = [f'I1 {i1[len(i1)-1]:.1f}', f'I2 {i2[len(i2)-1]:.1f}', f'I3 {i3[len(i3)-1]:.1f}', f'I4 {i4[len(i4)-1]:.1f}', f'I5 {i5[len(i5)-1]:.1f}', f'I6 {i6[len(i6)-1]:.1f}']
-
+	#names = [f'I1 {i1[len(i1)-1]:.1f}', f'I2 {i2[len(i2)-1]:.1f}', f'I3 {i3[len(i3)-1]:.1f}', f'I4 {i4[len(i4)-1]:.1f}', f'I5 {i5[len(i5)-1]:.1f}', f'I6 {i6[len(i6)-1]:.1f}']
+	names = []
+	for i in range(0, len(channels)):
+		ch = channels[i]
+		names.append(f'I{i+1} {ch[len(ch)-1]:.2f}')
 	for i in range(0, len(channels)):
 		axcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
 
@@ -635,33 +692,21 @@ def loop():
 	
 	
 	axdiffcurrent.set_title('')
-	axdiffcurrent.set_ylabel(r'$dI/dt (mA-hr^{-1})$')
-	#axdiffcurrent.set_ylim([-1, 1])
+	axdiffcurrent.set_ylabel(r'$dI/dt (mA-s^{-1})$')
+	#axdiffcurrent.set_ylim([-.5, .5])
 	axdiffcurrent.set_xlabel('Time')
 	axdiffcurrent.xaxis.set_major_formatter(matplotlib.dates.ConciseDateFormatter(axcurrent.xaxis.get_major_locator()))
 	axdiffcurrent.xaxis.set_major_locator(matplotlib.dates.MinuteLocator(interval=timelabelinterval))
-	
+	axdiffcurrent.set_yscale('symlog', base=10)
 	channels = [di1, di2, di3, di4, di5, di6]
-	#channels = [di1]
-	#names = [f'dI1 {di1[len(di1)-1]:.1f}', f'dI2 {di2[len(di2)-1]:.1f}', f'dI3 {di3[len(di3)-1]:.1f}', f'dI4 {di4[len(di4)-1]:.1f}', f'dI5 {di5[len(di5)-1]:.1f}', f'dI6 {di6[len(di6)-1]:.1f}']
 	names = []
 	
-	#croppedtime = esdf['Time']
-	#sizedifference = len(esdf['Time']) - len(di1)
-	#before = np.ceil(sizedifference/2)
-	#after = np.floor(sizedifference/2)
-	
-	#croppedtime = croppedtime[before:-after]
-	
-	#print(f'Cropped time: {len(croppedtime)}')
-	#print(f'Diff current: {len(di1)}')
-	
-	
 	for i in range(0, len(channels)):
-		names.append(f'dI{i} {np.mean(channels[i]):.2f}')
+		ch = channels[i]
+		#names.append('$\overline{dI}$' + f'{i+1} {np.mean(channels[i]):.2f}')
+		names.append(f'dI{i+1} {ch[len(ch)-1]:.2f}')
 		
 	for i in range(0, len(channels)):
-		
 		axdiffcurrent.plot(esdf['Time'], channels[i], linewidth=1, markersize=0, color=colors[i])
 
 	axdiffcurrent.legend(names, loc='upper left')
@@ -691,5 +736,6 @@ if __name__ == '__main__':
 		except Exception as e:
 			print(f'Error running plotter. Auto retry...')
 			print(e)
+			raise e
 			time.sleep(5)
 		
